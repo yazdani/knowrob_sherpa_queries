@@ -21,6 +21,28 @@ import geometry_msgs.Pose;
 import org.ros.node.topic.Publisher;
 import java.util.HashMap;
 
+
+// callDown(A,B):-
+// sherpa_interface(SHERPA),
+// get_objects_by_type(A, Names),
+// get_objects_by_pose(A, Poses),
+// jpl_list_to_array(Names,Name),
+// jpl_list_to_array(Poses,Pose),
+// jpl_call(SHERPA,'slopeDown',[Name,Pose],C),
+// jpl_array_to_list(C,D),
+// foreach(member(X,D), add_arrow(X,_)).
+
+// callUp(A,B):-
+// sherpa_interface(SHERPA),
+// get_objects_by_type(A, Names),
+// get_objects_by_pose(A, Poses),
+// jpl_list_to_array(Names,Name),
+// jpl_list_to_array(Poses,Pose),
+// jpl_call(SHERPA,'slopeUp',[Name,Pose],C),
+// jpl_array_to_list(C,D),
+// foreach(member(X,D), add_arrow(X,_)).
+
+
 public class VisualizationMarker extends AbstractNodeMain{
 	private static final String HTML_RED = "ff0000";
 
@@ -328,4 +350,16 @@ System.out.println("tesssssadasdsasstwewew");
 	
     }
 
+    public String slopeUp(String[] names, float[][] nums)
+    {
+	//String[] arr = new String[3];
+	System.out.println("Juhu that worked"+nums[0][0]);
+	return "works";
+    }
+
+    public String[] slopeDown(String[] names)
+    {
+	//	String[] arr = new String[3];
+	return names;
+    }
 }
