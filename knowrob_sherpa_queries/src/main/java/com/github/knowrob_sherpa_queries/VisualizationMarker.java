@@ -112,33 +112,7 @@ public class VisualizationMarker extends AbstractNodeMain{
         @Override
 	public void onStart(final ConnectedNode connectedNode) {
 	    node = connectedNode;
-	    System.out.println("Start node");
-	    //   final Publisher<visualization_msgs.MarkerArray> publisher =
 	    pub = connectedNode.newPublisher("/visualization_marker_array",visualization_msgs.MarkerArray._TYPE);
-	    //    markers =  new ConcurrentHashMap<String, Marker>(8, 0.9f, 1);
-	   
-	    //  pub = publisher;
-	    // connectedNode.executeCancellableLoop(new CancellableLoop() {
-	    // 	    private int sequenceNumber;
-		    
-	    // 	    @Override
-	    // 	    protected void setup() {
-	    // 		sequenceNumber = 0;
-	    // 	    }
-		    
-	    // 	    @Override
-	    // 	    protected void loop() throws InterruptedException {
-	    // 		MarkerArray arr = pub.newMessage();
-	    // 		for(Marker mrk : markers.values()) {
-	    // 		    arr.getMarkers().add(mrk);
-	    // 		}
-	    // 		pub.publish(arr);
-	    // 		markers.clear();
-	    // 		sequenceNumber++;
-	    // 		Thread.sleep(1000);
-	    // 	    }
-	    // 	});
-
 	}
 
     public void clear() {
@@ -167,8 +141,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 
      public void publishMarkers() {
 		try {
-		    System.out.println("test inside publish Marker");
-			// wait for node to be ready
 		    synchronized (markers) {
 			MarkerArray arr = pub.newMessage();
 			
@@ -176,8 +148,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 			    arr.getMarkers().add(mrk);
 			}
 			pub.publish(arr);
-			System.out.println("pub");
-			//	System.out.println(markers.values());
 			markers.clear();
 		    }
 		} catch (Exception e) {
@@ -212,7 +182,6 @@ public class VisualizationMarker extends AbstractNodeMain{
     //public String addArrow(float[] pose) {
     public String addArrow(float[] pose, float[] dim){
 	final Marker m;
-	System.out.println("add_arrow");
 	m = createMarker();
 	m.setType(Marker.ARROW);
 	m.setMeshUseEmbeddedMaterials(true);
@@ -229,80 +198,178 @@ public class VisualizationMarker extends AbstractNodeMain{
 	m.getScale().setX(5);
 	m.getScale().setY(5);
 	m.getScale().setZ(20.0);
-	System.out.println("HALLO5");
 	m.getColor().setR(1);
 	m.getColor().setG(0);
 	m.getColor().setB(0);
 	m.getColor().setA(1.0f);
-	System.out.println("HALLO1");
-	        
   	 	 //add marker to map
 	final StringBuilder identifier = new StringBuilder();
 	identifier.append(m.getNs()).append('_').append(m.getId());
-	System.out.println("testwewew");
-	System.out.println(m.getId());
-	System.out.println(identifier.toString());
-  	 	 synchronized(markers) {
-  	 	     markers.put(identifier.toString(),m);
-System.out.println("tessssasdsadsasstwewew");
-  	 	 }
-		 	System.out.println("tesssssstwewew");
-  	 	 synchronized(markersCache) {
-  	 	     markersCache.put(identifier.toString(),m);
-System.out.println("tesssssadasdsasstwewew");
-  	 	 }
-		 System.out.println("test123");
-					
-  	 	 publishMarkers();
-		 if (pub == null)
-		     System.out.println("WOW");
-		 else
-		     System.out.println("NOOOIN");
-
-		 return "Cool that worked";
-  	 }
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+	
+	return "Cool that worked";
+    }
 
     public String removeMapObject(String A){
-	System.out.println("I removed it> ");
 	return "checked";
     }
 
        
+    public String addText(float[] pose, float[] dim, String objname)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.TEXT_VIEW_FACING);
+	m.setMeshUseEmbeddedMaterials(true);
+	String[] name = new String[2]; 
 
-	public Marker createMarker() {
-	    System.out.println("createMarker");
-	    waitForNode();
-		System.out.println("node");
-		Marker m = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
-		System.out.println("node2");
-		m.setNs("knowrob_sherpa_queries");
-		m.setId(id++);
-		m.setAction(Marker.ADD);
-		m.setLifetime(new Duration());
-		m.getColor().setR(1.0f);
-		m.getColor().setG(0.0f);
-		m.getColor().setB(0.0f);
-		m.getColor().setA(1.0f);
-		return m;
-	}
-
-     private void waitForNode() {
-	
-	 System.out.println(pub);
-	 System.out.println(node);
-		// wait for node to be ready
-		try {
-			while(node == null || pub == null) {
-				Thread.sleep(200);
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+	if(objname.contains("#"))
+	   {
+	       name = objname.split("#");
+	   }else
+		{
+		    name = objname.split(":");
 		}
-     }
+	m.setText(name[1]);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2] + dim[2] + 25;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setZ(20.0);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+	return "";
+    }
 
-    public String detectedObject(float[] pose){
-		final Marker m;
-	System.out.println("add_arrow");
+    public void addRayTracingMarker(float[] pose)
+    {
+	System.out.println("addRayTracingMarker");
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.CUBE);
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2] + 20;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setZ(40.0);
+	m.getScale().setY(3.0);
+	m.getScale().setX(3.0);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(0.7f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+    }
+    
+    public Marker createMarker() {
+	waitForNode();
+	Marker m = node.getTopicMessageFactory().newFromType(visualization_msgs.Marker._TYPE);
+	m.setNs("knowrob_sherpa_queries");
+	m.setId(id++);
+	m.setAction(Marker.ADD);
+	m.setLifetime(new Duration());
+	m.getColor().setR(1.0f);
+	m.getColor().setG(0.0f);
+	m.getColor().setB(0.0f);
+	m.getColor().setA(1.0f);
+	return m;
+    }
+
+    private void waitForNode() {
+	// wait for node to be ready
+	try {
+	    while(node == null || pub == null) {
+		Thread.sleep(200);
+	    }
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	}
+    }
+    
+
+    public void visualizeBBoxes(float[] pose, float[] dim)
+    {
+
+	System.out.println("visualize BBoxes");
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.CUBE);
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2];
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(pose[3]);
+	m.getPose().getOrientation().setX(pose[4]);
+	m.getPose().getOrientation().setY(pose[5]);
+	m.getPose().getOrientation().setZ(pose[6]);	
+	m.getScale().setZ(dim[2]);
+	m.getScale().setY(dim[1]);
+	m.getScale().setX(dim[0]);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(0.8f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+
+    }
+    public void detectedObject(float[] pose){
+	final Marker m;
 	m = createMarker();
 	m.setType(Marker.ARROW);
 	m.setMeshUseEmbeddedMaterials(true);
@@ -319,47 +386,466 @@ System.out.println("tesssssadasdsasstwewew");
 	m.getScale().setX(5);
 	m.getScale().setY(5);
 	m.getScale().setZ(10.0);
-	System.out.println("HALLO5");
 	m.getColor().setR(1);
 	m.getColor().setG(0);
 	m.getColor().setB(0);
 	m.getColor().setA(1.0f);
-	System.out.println("HALLO1");
-	        
-  	 	 //add marker to map
+	
+	//add marker to map
 	final StringBuilder identifier = new StringBuilder();
 	identifier.append(m.getNs()).append('_').append(m.getId());
-	System.out.println("testwewew");
-	System.out.println(m.getId());
-	System.out.println(identifier.toString());
-  	 	 synchronized(markers) {
-  	 	     markers.put(identifier.toString(),m);
-System.out.println("tessssasdsadsasstwewew");
-  	 	 }
-		 	System.out.println("tesssssstwewew");
-  	 	 synchronized(markersCache) {
-  	 	     markersCache.put(identifier.toString(),m);
-System.out.println("tesssssadasdsasstwewew");
-  	 	 }
-		 System.out.println("test123");
-					
-  	 	 publishMarkers();
-
-		 System.out.println("COOL THAT WORKED TOO");
-		 return "Cool that worked2";
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}					
+	publishMarkers();
+	//	 return "Cool that worked2";
 	
     }
-
-    public String slopeUp(String[] names, float[][] nums)
+    
+    public void slopeUp(String[] names, float[][] nums)
     {
 	//String[] arr = new String[3];
-	System.out.println("Juhu that worked"+nums[0][0]);
-	return "works";
+
+	float value = nums[0][2];
+	float test;
+	
+	for(int i =1; i < names.length; i++)
+	    {
+	System.out.println(nums[i][2]);
+		if(nums[i][2] >= 0 && value >= 0)
+		    {
+			test = nums[i][2] - value;
+			if(test >= 3)
+			    {
+				float[] num = new float[3];
+				num[0] = nums[i][0];
+				num[1] = nums[i][1];
+				num[2] = nums[i][2];
+				addSlopeArrow(num, 0.0f, 0.0f, 1.0f, 1.0f);	    
+			    }
+			value = nums[i][2];
+		    }else 
+		    if(nums[i][2] >= 0 && value < 0)
+			{
+			    test = nums[i][2] + value;
+			    if(test >= 3)
+				{
+				    float[] num = new float[3];
+				    num[0] = nums[i][0];
+				    num[1] = nums[i][1];
+				    num[2] = nums[i][2];
+				    
+				    addSlopeArrow(num, 0.0f, 0.0f, 1.0f, 1.0f);
+				}
+			    value = nums[i][2];
+			}else
+			if(nums[i][2] < 0 && value >= 0)
+			    {
+				test = nums[i][2] + value;
+				if(test >= 3)
+				    {
+					
+					float[] num = new float[3];
+					num[0] = nums[i][0];
+					num[1] = nums[i][1];
+					num[2] = nums[i][2];
+					
+					addSlopeArrow(num, 0.0f, 0.0f, 1.0f, 1.0f);
+				    }
+				value = nums[i][2];
+			    }else
+			    if(nums[i][2] < 0 && value < 0)
+				{
+				    float tmp = nums[i][2] * (- 1);
+				    float tmp1 = nums[i][2] * (- 1);
+				    test  = tmp - tmp1;
+				    if(test >= 3)
+					{
+					    
+					    float[] num = new float[3];
+					    num[0] = nums[i][0];
+					    num[1] = nums[i][1];
+					    num[2] = nums[i][2];
+					    
+					    addSlopeArrow(num, 0.0f, 0.0f, 1.0f, 1.0f);
+					}
+				    value = nums[i][2];
+				}
+	    }
+	slopeDown(names,nums);
+	slopeStrong(names,nums);
+	
+    }
+    
+ public void slopeStrong(String[] names, float[][] nums)
+    {
+	//String[] arr = new String[3];
+	float value = nums[0][2];
+	float test;
+	
+	for(int i =1; i < names.length; i++)
+	    {
+		System.out.println(nums[i][2]);
+		if(nums[i][2] >= 0 && value >= 0)
+		    {
+			test = nums[i][2] - value;
+			if(test >= 5)
+			    {
+				float[] num = new float[3];
+				num[0] = nums[i][0];
+				num[1] = nums[i][1];
+				num[2] = nums[i][2];
+				addSlopeArrow(num, 1.0f, 0.0f, 1.0f, 1.0f);	    
+			    }
+			value = nums[i][2];
+		    }else 
+		    if(nums[i][2] >= 0 && value < 0)
+			{
+			    test = nums[i][2] + value;
+			    if(test >= 5)
+				{
+				    float[] num = new float[3];
+				    num[0] = nums[i][0];
+				    num[1] = nums[i][1];
+				    num[2] = nums[i][2];
+				    
+				    addSlopeArrow(num, 1.0f, 0.0f, 1.0f, 1.0f);
+				}
+			    value = nums[i][2];
+			}else
+			if(nums[i][2] < 0 && value >= 0)
+			    {
+				test = nums[i][2] + value;
+				if(test >= 5)
+				    {
+					
+					float[] num = new float[3];
+					num[0] = nums[i][0];
+					num[1] = nums[i][1];
+					num[2] = nums[i][2];
+					
+					addSlopeArrow(num, 1.0f, 0.0f, 1.0f, 1.0f);
+				    }
+				value = nums[i][2];
+			    }else
+			    if(nums[i][2] < 0 && value < 0)
+				{
+				    float tmp = nums[i][2] * (- 1);
+				    float tmp1 = nums[i][2] * (- 1);
+				    test  = tmp - tmp1;
+				    if(test >= 5)
+					{
+					    
+					    float[] num = new float[3];
+					    num[0] = nums[i][0];
+					    num[1] = nums[i][1];
+					    num[2] = nums[i][2];
+					    
+					    addSlopeArrow(num, 1.0f, 0.0f, 1.0f, 1.0f);
+					}
+				    value = nums[i][2];
+				}
+	    }
+	
+    }
+    
+    
+    public void addSlopeArrow(float[] num, float r, float g, float b, float a)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.ARROW);
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = num[0];
+	float y = num[1];
+	float z = num[2] + 15;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(1);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setX(5);
+	m.getScale().setY(5);
+	m.getScale().setZ(20.0);
+	m.getColor().setR(r);
+	m.getColor().setG(g);
+	m.getColor().setB(b);
+	m.getColor().setA(a);
+	
+	//add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	
+	publishMarkers();
+	
+    }
+    
+    public void slopeDown(String[] names, float[][] nums)
+    {
+
+	float value = nums[0][2];
+	float test;
+	for(int i =1; i < names.length; i++)
+	    {
+	System.out.println(nums[i][2]);
+		if(nums[i][2] >= 0 && value >= 0)
+		    {
+			test = nums[i][2] - value;
+			if( test <= -3)
+			    {
+				float[] num = new float[3];
+				num[0] = nums[i][0];
+				num[1] = nums[i][1];
+				num[2] = nums[i][2];
+				
+				addSlopeArrow(num,0.0f, 0.0f, 1.0f, 1.0f);
+			    }
+			value = nums[i][2];
+		    }else 
+		    if(nums[i][2] >= 0 && value < 0)
+			{
+			    
+			    test = nums[i][2] + value;
+			    if(test <= -3)
+				{
+				    float[] num = new float[3];
+				    num[0] = nums[i][0];
+				    num[1] = nums[i][1];
+				    num[2] = nums[i][2];
+				    
+				    addSlopeArrow(num,0.0f, 0.0f, 1.0f, 1.0f);
+				}
+			    value = nums[i][2];
+			}else
+			if(nums[i][2] < 0 && value >= 0)
+			    {
+				test = nums[i][2] + value;
+				if(test <= -3)
+				    {
+					float[] num = new float[3];
+					num[0] = nums[i][0];
+					num[1] = nums[i][1];
+					num[2] = nums[i][2];
+					
+					addSlopeArrow(num,0.0f, 0.0f, 1.0f, 1.0f);
+				    }
+				value = nums[i][2];
+			    }else
+			    if(nums[i][2] < 0 && value < 0)
+				{
+				    float tmp = nums[i][2] * (- 1);
+				    float tmp1 = nums[i][2] * (- 1);
+				    test  = tmp - tmp1;
+				    if(test <= -3)
+					{
+					    float[] num = new float[3];
+					    num[0] = nums[i][0];
+					    num[1] = nums[i][1];
+					    num[2] = nums[i][2];
+					    
+					    addSlopeArrow(num,0.0f, 0.0f, 1.0f, 1.0f);
+					}
+				    value = nums[i][2];
+				}
+	    }	
     }
 
-    public String[] slopeDown(String[] names)
+    public bool checkValueInBoundingBox(float[] min, float[] max, float[] point)
     {
-	//	String[] arr = new String[3];
-	return names;
+	if(point[0] >= min[0] &&
+	   point[0] <= max[0] &&
+	   point[1] >= min[1] &&
+	   point[1] <= max[1] &&
+	   point[2] >= min[2] &&
+	   point[2] <= max[2])
+	    return true<;
+	return false;
     }
+
+
+
+    public String[] Roadneighbours()
+    {
+	String[] newArray = {"http://knowrob.org/kb/unreal_log.owl#RoadSegment_ULIF",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_CL1P",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_T0KO",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_FdGR",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test001",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_T7F4",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test002",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_nTnX",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test003",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_0c7k",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_8FyA",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_douW",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test005",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_ymF2",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test088",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_MB6X",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test087",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test006",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_O5lp",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_a2li",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test007",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_oywf",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test008",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_kN9i",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test009",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_2roE",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_f7dB",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_nnhu",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test010",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_Kc95",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test011",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_XDfk",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test012",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_yJc6",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test013",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_vBzx",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_x7LV",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test015",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_SMNT",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test016",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_163D",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test014",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_xIQV",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test017",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_k5vM",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test018",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_iQwa",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test019",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_GkTZ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test020",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_ssvG",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test021",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_FHVo",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_7qsH",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test029",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_cv2v",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test022",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_2LoX",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test023",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_0me3",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test024",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_TAgO",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test025",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_p2SV",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test026",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test101",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_64da",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test027",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_FRQh",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test030",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_uMpz",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test031",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_7TTJ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test040",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_2YqG",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test032",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_Axra",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test033",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_9C91",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test034",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_YvsT",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test035",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_7xJQ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test036",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_WLhv",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test037",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_tvW6",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test038",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test039",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_ve9S",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test041",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_3f9w",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test042",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_rSuo",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test044",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_5hiP",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test045",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_rHzq",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test061",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_CBGS",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_dAFW",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test064",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_aucQ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test065",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_mjat",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test060",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_N0uP",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test059",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_soCa",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test066",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_64gj",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_ZYLx",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test050",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_aIWx",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test051",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_iH5x",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test052",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_RxrV",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test053",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_HhQm",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test054",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_gSPp",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test055",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_pNQD",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test056",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_xohv",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test057",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_q3J4",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test058",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_Iqxk",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test070",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_YCAT",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test071",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_RoH1",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test072",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_Riyb",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test073",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_q2KZ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test074",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_zDX8",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test075",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_SEVd",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test076",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_j7Pp",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test077",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_YL5x",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test078",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_WguZ",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test079",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_eXjK",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test080",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_6uk7",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test081",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_y2wG",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test082",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_K2HE",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test083",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_m0e6",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test084",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_3Nai",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test085",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test086",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_R2rM",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_o1yX",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test100",
+			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_IhAY"};
+	return newArray;
+    }
+    
 }

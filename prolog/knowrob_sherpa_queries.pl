@@ -30,20 +30,22 @@ Copyright (C) 2017 Fereshta Yazdani
 
 :- module(knowrob_sherpa_queries,
       [
+       add_arrow/2,
+       add_traces/1,
+       add_stext/2,
        all_poses/2,
-       callDown/2,
-       callUp/2,
+       callAll/1,
+       callSlope/1,
+       callVisualizer/1,
        clear_marker/0,
+       detected_object/1,
        get_all_poses/2,
        get_objects_by_type/2,
        get_object_by_type/2,
        sherpa_interface/0,
        sherpa_interface/1,
-       slope/3,
-       add_arrow/2,
-       add_underscore_arrow/2,
-       detected_object/2,
-       remove_map_objects/2
+       slope/1,
+       visualize_bboxes/1
   ]).
 
 :- use_module(library('semweb/rdf_db')).
@@ -55,19 +57,20 @@ Copyright (C) 2017 Fereshta Yazdani
 :- use_module(library('jpl')).
 
 :- rdf_meta sherpa_test(r,r),
+    add_arrow(r,r),
+    add_stext(r,r),
     all_poses(r,r),
-    callDown(r,r),
-    callUp(r,r),
+    callAll(r),
+    callSlope(r),
+    callVisualizer(r),
+    detected_object(r),
     get_all_poses(r,r),
     get_objects_by_type(r,?),
     get_object_by_type(r,r),
     sherpa_interface(r),
     sherpa_interface2(r),
-    slope(r,r,r),
-    add_arrow(r,r),
-    add_underscore_arrow(r,r),
-    detected_object(r,r),
-    remove_map_objects(r,r).
+    slope(r),
+    visualize_bboxes(r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(u-map, 'http://knowrob.org/kb/u_map.owl#', [keep(true)]).
@@ -77,75 +80,113 @@ Copyright (C) 2017 Fereshta Yazdani
 
 sherpa_interface :-  sherpa_interface(_).
  
-    
-:-assert(sherpa_inter(fail)).
 
 sherpa_interface(SHERPA) :-
-sherpa_inter(fail),
+(\+ current_predicate(v_canvas, _)),
 jpl_call('com.github.knowrob_sherpa_queries.VisualizationMarker', get, [], SHERPA),
 jpl_list_to_array(['com.github.knowrob_sherpa_queries.VisualizationMarker'], Arr),
 jpl_call('org.knowrob.utils.ros.RosUtilities', runRosjavaNode, [SHERPA, Arr], _),
-retract(sherpa_inter(fail)),
-assert(sherpa_inter(SHERPA)),!.
+ assert(v_canvas(SHERPA)),!.
 
-sherpa_interface(DB):-
-    sherpa_inter(DB).
+sherpa_interface(SHERPA):-
+current_predicate(v_canvas, _),
+v_canvas(SHERPA).
 
-add_arrow(Obj,FIN) :-
+
+%% add_arrow(+Individual, B)  is det.
+%
+% add an arrow ontop of objects
+% this is used in order to visualize roofings
+%
+add_arrow(Obj,B) :-
+sherpa_interface(SHERPA),
+format("TEST"),
+current_object_pose(Obj,Pose),
+format("TEST1"),
+jpl_list_to_array(Pose,OA),
+format("TEST2"),
+map_object_dimensions(Obj,W,D,H),
+format("TEST3"),
+append([W, D, H],[], L),
+jpl_list_to_array(L,LA),
+jpl_call(SHERPA,'addArrow',[OA,LA],B).
+
+add_stext(Obj,B) :-
 sherpa_interface(SHERPA),
 current_object_pose(Obj,Pose),
 jpl_list_to_array(Pose,OA),
 map_object_dimensions(Obj,W,D,H),
 append([W, D, H],[], L),
 jpl_list_to_array(L,LA),
-jpl_call(SHERPA,'addArrow',[OA,LA],FIN).
+jpl_call(SHERPA,'addText',[OA,LA,Obj],B).
 
-remove_map_objects(A,B):-
-sherpa_interface(SHERPA),
-jpl_call(SHERPA,'removeMapObject',[A],B).
-
-add_underscore_arrow(A,B):-
-sherpa_interface(SHERPA),
-jpl_call(SHERPA,'addUnderscoreArrow',[A],B).
-
+%% clear_marker is det.
+%
+% clears all the markers.
+%
 clear_marker :-
 sherpa_interface(SHERPA),
 jpl_call(SHERPA, 'clear', [], _).
 
-detected_object(A,B):-
+%% detected_object(+Individual) is det.
+%
+% detected_object visualized the object by an arrow.
+%
+detected_object(A):-
 sherpa_interface(SHERPA),
 current_object_pose(A,Pose),
 jpl_list_to_array(Pose,OA),
-jpl_call(SHERPA,'detectedObject',[OA],B).
+jpl_call(SHERPA,'detectedObject',[OA],_).
 
-slope(A,B,C):-
-==(A,'up') -> callUp(B,C);
-callDown(B,C).
+%% slope(+Checker) is det.
+%
+% slope is calculating the slopes up and down.
+%
+slope(B):-
+callAll(B).
 
-callDown(A,B):-
+callAll(A):-
+format("callAll"),
+get_objects_by_type(A, _),
+callSlope(_).
+
+add_traces(A):-
+    sherpa_interface(SHERPA),
+    jpl_list_to_array(A,B),
+    jpl_call(SHERPA,'addRayTracingMarker',[B],_).
+
+callSlope(_):-
+format("callslope"),
 sherpa_interface(SHERPA),
-get_objects_by_type(A, Names),
-jpl_list_to_array(Names,Name),
-jpl_call(SHERPA,'slopeDown',[Name],C),
-jpl_array_to_list(C,B).
-
-callUp(A,B):-
-sherpa_interface(SHERPA),
-get_objects_by_type(A, Names),
-get_all_poses(Names,Poses),
-format("all_poses"),
-jpl_list_to_array(Names, N),
-format("all_poses123"),
+jpl_call(SHERPA,'Roadneighbours',[], A),
+format("callslope3"),
+jpl_array_to_list(A, AL),
+format("callslope2"),
+get_all_poses(AL,Poses),
+format("callslope4"),
+jpl_list_to_array(AL, N),
+format("callslope5"),
 jpl_list_to_array(Poses, P),
-format("all_poses456"),
-jpl_call(SHERPA,'slopeUp',[N, P],B).
+format("callslope6"),
+jpl_call(SHERPA,'slopeUp',[N, P],_).
+
+visualize_bboxes(A):-
+get_objects_by_type(A, Objs),
+    forall(member(X,Objs),callVisualizer(X)).
+
+callVisualizer(A):-
+  sherpa_interface(SHERPA),
+current_object_pose(A,P),
+map_object_dimensions(A,W,D,H),
+append([W, D, H],[], L),
+    jpl_list_to_array(L,LA), 
+    jpl_list_to_array(P,PA),
+    jpl_call(SHERPA,'visualizeBBoxes',[PA,LA],_).
 
 get_objects_by_type(TYPE, Objs) :-
-format('get_objects_by_type\n'),
     setof(Obj, get_object_by_type(TYPE, Obj), Objs).
 
 get_object_by_type(TYPE, Obj) :-
-format('\nget_object_by_type\n'),
    owl_individual_of(Obj,TYPE).
 
 all_poses(Number,Poses):-
