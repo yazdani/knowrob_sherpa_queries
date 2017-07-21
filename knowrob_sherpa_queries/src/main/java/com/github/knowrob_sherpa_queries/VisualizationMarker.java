@@ -174,6 +174,7 @@ public class VisualizationMarker extends AbstractNodeMain{
   	 * @param markertype marker type id (see ROS Marker message)
   	 */
 
+    
 // add_arrow(Obj,FIN) :-
 // sherpa_interface(SHERPA),
 // current_object_pose(Obj,Pose),
@@ -217,10 +218,81 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "Cool that worked";
     }
 
+
+    public void visualizeAreas(float[] pose)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.CUBE);
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2];
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(pose[3]);
+	m.getPose().getOrientation().setX(pose[4]);
+	m.getPose().getOrientation().setY(pose[5]);
+	m.getPose().getOrientation().setZ(pose[6]);	
+	m.getScale().setZ(10.0);
+	m.getScale().setY(3.0);
+	m.getScale().setX(3.0);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(0.7f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+    }
     public String removeMapObject(String A){
 	return "checked";
     }
 
+    public void addNameText(String name, float[] transform)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.TEXT_VIEW_FACING);
+	m.setMeshUseEmbeddedMaterials(true);
+	m.setText(name);
+	float x = transform[0];
+	float y = transform[1];
+	float z = transform[2]+3;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setZ(4.0);
+	m.getColor().setR(1);
+	m.getColor().setG(1);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+
+    }
        
     public String addText(float[] pose, float[] dim, String objname)
     {
@@ -663,7 +735,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 	    }	
     }
 
-    public bool checkValueInBoundingBox(float[] min, float[] max, float[] point)
+    public boolean checkValueInBoundingBox(float[] min, float[] max, float[] point)
     {
 	if(point[0] >= min[0] &&
 	   point[0] <= max[0] &&
@@ -671,11 +743,47 @@ public class VisualizationMarker extends AbstractNodeMain{
 	   point[1] <= max[1] &&
 	   point[2] >= min[2] &&
 	   point[2] <= max[2])
-	    return true<;
+	    return true;
 	return false;
     }
 
 
+    public void visualizeLocation(float[] transform)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.ARROW);
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = transform[0];
+	float y = transform[1];
+	float z = transform[2];
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(-1);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setX(2);
+	m.getScale().setY(2);
+	m.getScale().setZ(10.0);
+	m.getColor().setR(1);
+	m.getColor().setG(1);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+
+    }
 
     public String[] Roadneighbours()
     {

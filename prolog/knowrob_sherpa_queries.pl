@@ -33,6 +33,7 @@ Copyright (C) 2017 Fereshta Yazdani
        add_arrow/2,
        add_traces/1,
        add_stext/2,
+       add_name/2,
        all_poses/2,
        callAll/1,
        callSlope/1,
@@ -42,9 +43,12 @@ Copyright (C) 2017 Fereshta Yazdani
        get_all_poses/2,
        get_objects_by_type/2,
        get_object_by_type/2,
+       set_mongodb/1,
        sherpa_interface/0,
        sherpa_interface/1,
+       visualize_agent_location/1,
        slope/1,
+       visualize_areas/1,
        visualize_bboxes/1
   ]).
 
@@ -59,6 +63,7 @@ Copyright (C) 2017 Fereshta Yazdani
 :- rdf_meta sherpa_test(r,r),
     add_arrow(r,r),
     add_stext(r,r),
+    add_name(r,r),
     all_poses(r,r),
     callAll(r),
     callSlope(r),
@@ -67,10 +72,13 @@ Copyright (C) 2017 Fereshta Yazdani
     get_all_poses(r,r),
     get_objects_by_type(r,?),
     get_object_by_type(r,r),
+    set_mongodb(r),
     sherpa_interface(r),
     sherpa_interface2(r),
+    visualize_agent_location(r),
     slope(r),
-    visualize_bboxes(r).
+    visualize_bboxes(r),
+    visualize_areas(r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(u-map, 'http://knowrob.org/kb/u_map.owl#', [keep(true)]).
@@ -92,6 +100,16 @@ sherpa_interface(SHERPA):-
 current_predicate(v_canvas, _),
 v_canvas(SHERPA).
 
+
+visualize_agent_location(T) :-
+sherpa_interface(SHERPA),
+jpl_list_to_array(T,TL),
+jpl_call(SHERPA,'visualizeLocation',[TL],_).
+
+
+set_mongodb(COL):-
+mongo_interface(Mongo),
+jpl_call(Mongo, 'setDatabase', [COL], _).
 
 %% add_arrow(+Individual, B)  is det.
 %
@@ -119,6 +137,11 @@ map_object_dimensions(Obj,W,D,H),
 append([W, D, H],[], L),
 jpl_list_to_array(L,LA),
 jpl_call(SHERPA,'addText',[OA,LA,Obj],B).
+
+add_name(N,Tr) :-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Tr,TL),
+jpl_call(SHERPA,'addNameText',[N,TL],_).
 
 %% clear_marker is det.
 %
@@ -169,6 +192,11 @@ format("callslope5"),
 jpl_list_to_array(Poses, P),
 format("callslope6"),
 jpl_call(SHERPA,'slopeUp',[N, P],_).
+
+visualize_areas(A):-
+    sherpa_interface(SHERPA),
+    jpl_list_to_array(A, L),
+    jpl_call(SHERPA,'visualizeAreas',[L],_).
 
 visualize_bboxes(A):-
 get_objects_by_type(A, Objs),
