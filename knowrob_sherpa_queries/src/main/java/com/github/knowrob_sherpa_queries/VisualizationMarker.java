@@ -20,6 +20,8 @@ import visualization_msgs.MarkerArray;
 import geometry_msgs.Pose;
 import org.ros.node.topic.Publisher;
 import java.util.HashMap;
+import java.text.DecimalFormat;
+import java.util.LinkedList;
 
 
 // callDown(A,B):-
@@ -339,6 +341,12 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "";
     }
 
+    public String[] getDetectedObjects(float[][] poses)
+    {
+	String[] arr = new String[10];
+	return arr;
+
+    }
     public void addRayTracingMarker(float[] pose)
     {
 	System.out.println("addRayTracingMarker");
@@ -956,4 +964,40 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return newArray;
     }
     
+    public String[] getAllTimepoints(String link, String startTime, String endTime, double interval)
+    {
+	String tflink_ = (link.startsWith("/") ? link : "/"+link);
+	ArrayList<String> list = new ArrayList<String>();
+	double t0 = parseTime_d(startTime);
+	double t1 = parseTime_d(endTime);
+	System.out.println(t0);
+	System.out.println(t1);
+	double length = 0;
+
+	System.out.println(t0 < t1);
+	System.out.println(t0 == t1);
+	for (double i = t0; i <= t1; i += interval) 
+	    {
+		String timepoint = "timepoint_" + new DecimalFormat("###.###").format(i);
+		list.add(timepoint);
+		System.out.println(timepoint);
+	    }
+	String[] array = new String[list.size()];
+	array = list.toArray(array); 
+	
+	return array;
+
+    }
+
+	/**
+	 * Parses String with common time format 'timepoint_%d'
+	 * and returns a double precision number that represents
+	 * the time passed since 1970.
+	 */
+	public double parseTime_d(String timepoint) {
+		String x[] = timepoint.split("timepoint_");
+		// Also allow input strings without 'timepoint_' prefix
+		String ts = (x.length==1 ? x[0] : x[1]);
+		return Double.valueOf(ts.replaceAll("[^0-9.]", ""));
+	}
 }

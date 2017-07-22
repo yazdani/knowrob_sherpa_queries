@@ -35,14 +35,18 @@ Copyright (C) 2017 Fereshta Yazdani
        add_stext/2,
        add_name/2,
        all_poses/2,
+       all_timepoint_poses/3,
        callAll/1,
        callSlope/1,
        callVisualizer/1,
        clear_marker/0,
        detected_object/1,
        get_all_poses/2,
+       get_all_timepoints/4,
+       get_all_timepoint_poses/3,
        get_objects_by_type/2,
        get_object_by_type/2,
+       get_all_detected_regions/4,
        set_mongodb/1,
        sherpa_interface/0,
        sherpa_interface/1,
@@ -65,13 +69,17 @@ Copyright (C) 2017 Fereshta Yazdani
     add_stext(r,r),
     add_name(r,r),
     all_poses(r,r),
+    all_timepoint_poses(r,r,r),
     callAll(r),
     callSlope(r),
     callVisualizer(r),
     detected_object(r),
     get_all_poses(r,r),
+    get_all_timepoint_poses(r,r,r),
+    get_all_timepoints(r,r,r,r),
     get_objects_by_type(r,?),
     get_object_by_type(r,r),
+    get_all_detected_regions(r,r,r,r),
     set_mongodb(r),
     sherpa_interface(r),
     sherpa_interface2(r),
@@ -151,6 +159,11 @@ clear_marker :-
 sherpa_interface(SHERPA),
 jpl_call(SHERPA, 'clear', [], _).
 
+get_all_timepoints(L,T1,T2,LA):-
+sherpa_interface(SHERPA),
+jpl_call(SHERPA,'getAllTimepoints', [L,T1,T2,5.0],Ar),
+jpl_array_to_list(Ar,LA).
+
 %% detected_object(+Individual) is det.
 %
 % detected_object visualized the object by an arrow.
@@ -217,6 +230,19 @@ get_objects_by_type(TYPE, Objs) :-
 get_object_by_type(TYPE, Obj) :-
    owl_individual_of(Obj,TYPE).
 
+all_timepoint_poses(Link,Timepoint,Poses):-
+    mng_lookup_transform('/map',Link,Timepoint,Pose),
+jpl_list_to_array(Pose,Sose),
+Poses = Sose.
+
+get_all_timepoint_poses(Link,[H|T],[SH|ST]):-
+all_timepoint_poses(Link, H,P),
+SH = P,
+get_all_timepoint_poses(Link,T, ST).
+
+get_all_timepoint_poses(_,[],[]).
+
+
 all_poses(Number,Poses):-
     current_object_pose(Number,P),
 jpl_list_to_array(P,S),
@@ -228,3 +254,11 @@ all_poses(H,P),
 get_all_poses(T, ST).
 
 get_all_poses([],[]).
+
+get_all_detected_regions(Link, T1, T2, L):-
+sherpa_interface(SHERPA),
+get_all_timepoints(Link, T1, T2, TL),
+get_all_timepoint_poses(Link,TL, TP),
+jpl_list_to_array(TP, A),
+jpl_call(SHERPA, 'getDetectedObjects', [A], AL),
+jpl_array_to_list(AL, L).
