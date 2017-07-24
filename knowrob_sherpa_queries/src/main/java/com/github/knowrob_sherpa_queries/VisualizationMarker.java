@@ -72,7 +72,10 @@ public class VisualizationMarker extends AbstractNodeMain{
 	/**
 	 * Stores original colors of highlighted objects
 	 */
-	protected Map<String, float[]> highlighted;
+    protected Map<String, float[]> highlighted;
+    
+    protected Map<String, float[]> mapObjects;
+    
 
 	/**
 	 * Counter for marker IDs
@@ -106,6 +109,7 @@ public class VisualizationMarker extends AbstractNodeMain{
   	 private VisualizationMarker() {
   	 	markers =  new ConcurrentHashMap<String, Marker>(8, 0.9f, 1);
   	 	markersCache =  new ConcurrentHashMap<String, Marker>(8, 0.9f, 1);
+		mapObjects = new HashMap<String, float[]>();
   	// 	highlighted = new ConcurrentHashMap<String, float[]>(8, 0.9f, 1);
   	// 	trajectories = new HashMap<String, List<String>>();
   	// //	agentSkeletons = new HashMap<String, Skeleton>();
@@ -341,35 +345,149 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "";
     }
 
-    public String[] getDetectedObjects(float[][] poses)
+    public void getDetectedObjects(float[][] transforms, String[] objs, float[][] dimensions)
     {
-	String[] arr = new String[10];
+	float[] arr = new float[7];
+
+	for(int i = 0; i < transforms.length; i++)
+	    {
+		arr[0] = transforms[i][3];
+		arr[1] = transforms[i][7];
+		arr[2] = transforms[i][11];
+		arr[3] = 0;
+		arr[4] = 0;
+		arr[5] = 0;
+		arr[6] = 1;
+		addTraces(arr, objs, dimensions);
+	    }
+	//return arr; 
+
+    }
+
+    public void addTraces(float[] pose, String[] objs, float[][] dimensions)
+    {
+	float[] min = new float[3];
+	float[] max = new float[3];
+
+	System.out.println("addTraces");
+	for(int i=0; i <= 770; i= i+2)
+	    {
+
+		float x = pose[0];
+		float y = pose[1];
+		float z = pose[2] - i;
+
+		for(int j=0; j < objs.length; j= j+2)
+		    {
+			min[0] = dimensions[j][0];
+			min[1] = dimensions[j][1];
+			min[2] = dimensions[j][2];
+			max[0] = dimensions[j+1][0];
+			max[1] = dimensions[j+1][1];
+			max[2] = dimensions[j+1][2];
+			
+			if(checkValueInBoundingBox(min, max, pose))
+			   {
+			       System.out.println(objs[j]);
+			       float r = 0.0f;
+			       float g = 1.0f;
+			       float b = 0.0f;
+			       addRayTracingMarker(pose, r, g, b);
+			   }
+		    }
+
+	// final Marker m;
+	
+	// m = createMarker();
+	// m.setType(Marker.CYLINDER);
+	// m.setMeshUseEmbeddedMaterials(true);
+	
+	// m.getPose().getPosition().setX(x);
+	// m.getPose().getPosition().setY(y);
+	// m.getPose().getPosition().setZ(z);
+	// m.getPose().getOrientation().setW(1);
+	// m.getPose().getOrientation().setX(0);
+	// m.getPose().getOrientation().setY(1);
+	// m.getPose().getOrientation().setZ(0);	
+	// m.getScale().setX(2);
+	// m.getScale().setY(2);
+	// m.getScale().setZ(2.0);
+	// m.getColor().setR(1);
+	// m.getColor().setG(0);
+	// m.getColor().setB(0);
+	// m.getColor().setA(0.7f);
+	// //add marker to map
+	// final StringBuilder identifier = new StringBuilder();
+	// identifier.append(m.getNs()).append('_').append(m.getId());
+	// synchronized(markers) {
+	//     markers.put(identifier.toString(),m);
+	// }
+	
+	// synchronized(markersCache) {
+	//     markersCache.put(identifier.toString(),m);
+	// }
+	// publishMarkers();
+	// System.out.println("test");
+	//     }
+	    }
+	
+    }
+
+
+    public float[][] getObjectsMinMax(String[] objs, float[][] trans, float[][] dims)
+    {
+	int doppelt = objs.length + objs.length;
+	float[][] arr = new float[doppelt][3];
+	for(int i = 0; i < objs.length; i++)
+	    {
+		float x = dims[i][0];
+		float y = dims[i][1];
+		float z = dims[i][2];
+		float minx = trans[i][0] - (x / 2);
+		float miny = trans[i][1] - (y / 2);
+		float minz = trans[i][2];
+		float maxx = trans[i][0] + (x / 2);
+		float maxy = trans[i][1] + (y / 2);
+		float maxz = trans[i][2] + z;
+		arr[i][0] = minx;
+		arr[i][1] = miny;
+		arr[i][2] = minz;
+		arr[i+1][0] = maxx;
+		arr[i+1][1] = maxy;
+		arr[i+1][2] = maxz;
+	    }
+
 	return arr;
 
     }
-    public void addRayTracingMarker(float[] pose)
+
+    public void addRayTracingMarker(float[] pose, float r, float g, float b)
     {
-	System.out.println("addRayTracingMarker");
+	float xyz = 0.0f;
+	if( g != 1.0f)
+	    {
+		xyz = 20.0f;
+	    }
 	final Marker m;
 	m = createMarker();
 	m.setType(Marker.CUBE);
 	m.setMeshUseEmbeddedMaterials(true);
 	float x = pose[0];
 	float y = pose[1];
-	float z = pose[2] + 20;
+	float z = pose[2] + xyz;
 	m.getPose().getPosition().setX(x);
 	m.getPose().getPosition().setY(y);
 	m.getPose().getPosition().setZ(z);
 	m.getPose().getOrientation().setW(1);
 	m.getPose().getOrientation().setX(0);
-	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setY(1);
 	m.getPose().getOrientation().setZ(0);	
-	m.getScale().setZ(40.0);
-	m.getScale().setY(3.0);
-	m.getScale().setX(3.0);
-	m.getColor().setR(1);
-	m.getColor().setG(0);
-	m.getColor().setB(0);
+	m.getScale().setZ(20.0);
+	m.getScale().setY(20.0);
+	m.getScale().setX(20.0);
+	m.getColor().setR(r);
+	m.getColor().setG(g);
+	m.getColor().setB(b);
 	m.getColor().setA(0.7f);
   	 	 //add marker to map
 	final StringBuilder identifier = new StringBuilder();
@@ -413,7 +531,6 @@ public class VisualizationMarker extends AbstractNodeMain{
     public void visualizeBBoxes(float[] pose, float[] dim)
     {
 
-	System.out.println("visualize BBoxes");
 	final Marker m;
 	m = createMarker();
 	m.setType(Marker.CUBE);
@@ -494,7 +611,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 	
 	for(int i =1; i < names.length; i++)
 	    {
-	System.out.println(nums[i][2]);
 		if(nums[i][2] >= 0 && value >= 0)
 		    {
 			test = nums[i][2] - value;
@@ -568,7 +684,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 	
 	for(int i =1; i < names.length; i++)
 	    {
-		System.out.println(nums[i][2]);
 		if(nums[i][2] >= 0 && value >= 0)
 		    {
 			test = nums[i][2] - value;
@@ -680,7 +795,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 	float test;
 	for(int i =1; i < names.length; i++)
 	    {
-	System.out.println(nums[i][2]);
 		if(nums[i][2] >= 0 && value >= 0)
 		    {
 			test = nums[i][2] - value;
@@ -970,17 +1084,12 @@ public class VisualizationMarker extends AbstractNodeMain{
 	ArrayList<String> list = new ArrayList<String>();
 	double t0 = parseTime_d(startTime);
 	double t1 = parseTime_d(endTime);
-	System.out.println(t0);
-	System.out.println(t1);
 	double length = 0;
 
-	System.out.println(t0 < t1);
-	System.out.println(t0 == t1);
 	for (double i = t0; i <= t1; i += interval) 
 	    {
 		String timepoint = "timepoint_" + new DecimalFormat("###.###").format(i);
 		list.add(timepoint);
-		System.out.println(timepoint);
 	    }
 	String[] array = new String[list.size()];
 	array = list.toArray(array); 

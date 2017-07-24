@@ -41,10 +41,18 @@ Copyright (C) 2017 Fereshta Yazdani
        callVisualizer/1,
        clear_marker/0,
        detected_object/1,
+       entering_succeeded/2,
+       entering_failed/1,
        get_all_poses/2,
+       goIntoOthermethod/3,
        get_all_timepoints/4,
        get_all_timepoint_poses/3,
        get_objects_by_type/2,
+       get_objects_MinMax/2,
+       map_objects_transformations/2,
+       all_objects_transformations/2,
+       map_objects_dimensions/2,
+       all_objects_dimensions/2,
        get_object_by_type/2,
        get_all_detected_regions/4,
        set_mongodb/1,
@@ -69,17 +77,25 @@ Copyright (C) 2017 Fereshta Yazdani
     add_stext(r,r),
     add_name(r,r),
     all_poses(r,r),
+    goIntoOthermethod(r,r,r),
     all_timepoint_poses(r,r,r),
     callAll(r),
     callSlope(r),
     callVisualizer(r),
     detected_object(r),
+    entering_succeeded(r,r),
+    entering_failed(r),
     get_all_poses(r,r),
     get_all_timepoint_poses(r,r,r),
     get_all_timepoints(r,r,r,r),
     get_objects_by_type(r,?),
     get_object_by_type(r,r),
     get_all_detected_regions(r,r,r,r),
+    get_objects_MinMax(r,r),
+    map_objects_transformations(r,r),
+    all_objects_transformations(r,r),
+    map_objects_dimensions(r,r),
+    all_objects_dimensions(r,r),
     set_mongodb(r),
     sherpa_interface(r),
     sherpa_interface2(r),
@@ -126,16 +142,42 @@ jpl_call(Mongo, 'setDatabase', [COL], _).
 %
 add_arrow(Obj,B) :-
 sherpa_interface(SHERPA),
-format("TEST"),
 current_object_pose(Obj,Pose),
-format("TEST1"),
 jpl_list_to_array(Pose,OA),
-format("TEST2"),
 map_object_dimensions(Obj,W,D,H),
-format("TEST3"),
 append([W, D, H],[], L),
 jpl_list_to_array(L,LA),
 jpl_call(SHERPA,'addArrow',[OA,LA],B).
+
+
+
+
+
+all_objects_transformations(Obj,Poses):-
+    current_object_pose(Obj,Pose),
+    jpl_list_to_array(Pose,Sose),
+    Poses = Sose.
+
+map_objects_transformations([H|T],[SH|ST]):-
+all_objects_transformations(H,P),
+SH = P,
+map_objects_transformations(T, ST).
+
+map_objects_transformations([],[]).
+
+
+all_objects_dimensions(Obj,Poses):-
+    map_object_dimensions(Obj,W,D,H),
+    append([W, D, H],[], L),
+    jpl_list_to_array(L,Pose),
+    Poses = Pose.
+
+map_objects_dimensions([H|T],[SH|ST]):-
+all_objects_dimensions(H,P),
+SH = P,
+map_objects_dimensions(T, ST).
+
+map_objects_dimensions([],[]).
 
 add_stext(Obj,B) :-
 sherpa_interface(SHERPA),
@@ -161,8 +203,7 @@ jpl_call(SHERPA, 'clear', [], _).
 
 get_all_timepoints(L,T1,T2,LA):-
 sherpa_interface(SHERPA),
-jpl_call(SHERPA,'getAllTimepoints', [L,T1,T2,5.0],Ar),
-jpl_array_to_list(Ar,LA).
+jpl_call(SHERPA,'getAllTimepoints', [L,T1,T2,3.0],LA).
 
 %% detected_object(+Individual) is det.
 %
@@ -182,28 +223,21 @@ slope(B):-
 callAll(B).
 
 callAll(A):-
-format("callAll"),
 get_objects_by_type(A, _),
 callSlope(_).
 
 add_traces(A):-
     sherpa_interface(SHERPA),
     jpl_list_to_array(A,B),
-    jpl_call(SHERPA,'addRayTracingMarker',[B],_).
+    jpl_call(SHERPA,'addTraces',[B],_).
 
 callSlope(_):-
-format("callslope"),
 sherpa_interface(SHERPA),
 jpl_call(SHERPA,'Roadneighbours',[], A),
-format("callslope3"),
 jpl_array_to_list(A, AL),
-format("callslope2"),
 get_all_poses(AL,Poses),
-format("callslope4"),
 jpl_list_to_array(AL, N),
-format("callslope5"),
 jpl_list_to_array(Poses, P),
-format("callslope6"),
 jpl_call(SHERPA,'slopeUp',[N, P],_).
 
 visualize_areas(A):-
@@ -231,9 +265,15 @@ get_object_by_type(TYPE, Obj) :-
    owl_individual_of(Obj,TYPE).
 
 all_timepoint_poses(Link,Timepoint,Poses):-
-    mng_lookup_transform('/map',Link,Timepoint,Pose),
+    ( mng_lookup_transform('/map',Link,Timepoint,Pose)
+       -> entering_succeeded(Pose,Poses); entering_failed(_)).
+
+
+entering_succeeded(Pose,Poses):-
 jpl_list_to_array(Pose,Sose),
 Poses = Sose.
+
+entering_failed(_).
 
 get_all_timepoint_poses(Link,[H|T],[SH|ST]):-
 all_timepoint_poses(Link, H,P),
@@ -255,10 +295,37 @@ get_all_poses(T, ST).
 
 get_all_poses([],[]).
 
-get_all_detected_regions(Link, T1, T2, L):-
+get_all_detected_regions(Link, T1, T2,_):-
 sherpa_interface(SHERPA),
+format('here\n'),
 get_all_timepoints(Link, T1, T2, TL),
-get_all_timepoint_poses(Link,TL, TP),
-jpl_list_to_array(TP, A),
-jpl_call(SHERPA, 'getDetectedObjects', [A], AL),
-jpl_array_to_list(AL, L).
+format('here1\n'),
+jpl_array_to_list(TL,TA),
+format('here3\n'),
+get_all_timepoint_poses(Link,TA, TP),
+format('here2\n'),
+map_root_objects('http://knowrob.org/kb/u_map.owl#USemMap_twoY',Objs),
+format('here4\n'),
+map_objects_transformations(Objs, Trans),
+format('here5\n'),
+map_objects_dimensions(Objs, Dims),
+format('here6\n'),
+jpl_list_to_array(Objs,LObjs),
+format('here7\n'),
+jpl_list_to_array(Trans,LTrans),
+format('here8\n'),
+jpl_list_to_array(Dims,LDims),
+format('here10\n'),
+jpl_call(SHERPA,'getObjectsMinMax',[LObjs, LTrans, LDims], LANA),
+format('here11\n'),
+goIntoOthermethod(TP,LObjs,LANA).
+
+goIntoOthermethod(TP,LObjs,E):-
+sherpa_interface(SHERPA),
+format('here12\n'),
+jpl_list_to_array(TP,TA),
+format('here13\n'),
+jpl_call(SHERPA, 'getDetectedObjects', [TA, LObjs, E], _).
+
+
+get_objects_MinMax(_,_).
