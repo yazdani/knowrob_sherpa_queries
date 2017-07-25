@@ -4,6 +4,7 @@ import org.ros.message.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
+import java.util.Collections;
 import java.io.*;
 import org.apache.commons.logging.Log;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +23,7 @@ import org.ros.node.topic.Publisher;
 import java.util.HashMap;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
-
+import java.util.LinkedHashSet;
 
 // callDown(A,B):-
 // sherpa_interface(SHERPA),
@@ -345,9 +346,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "";
     }
 
-    public void getDetectedObjects(float[][] transforms, String[] objs, float[][] dimensions)
+    public String[] getDetectedObjects(float[][] transforms, String[] objs, float[][] dimensions)
     {
 	float[] arr = new float[7];
+	List<String> list = new ArrayList<String>();
+
 
 	for(int i = 0; i < transforms.length; i++)
 	    {
@@ -358,44 +361,56 @@ public class VisualizationMarker extends AbstractNodeMain{
 		arr[4] = 0;
 		arr[5] = 0;
 		arr[6] = 1;
-		addTraces(arr, objs, dimensions);
+		list.add(addTraces(arr, objs, dimensions));
 	    }
-	//return arr; 
+	
+
+     LinkedHashSet<String> lhs = new LinkedHashSet<String>();
+     lhs.addAll(list);
+     list.clear();
+     list.addAll(lhs);
+     list.removeAll(Collections.singleton("Empty"));
+     String[] array = new String[list.size()];
+     array = list.toArray(array); 
+     
+     return array;
 
     }
 
-    public void addTraces(float[] pose, String[] objs, float[][] dimensions)
+    public String addTraces(float[] pose, String[] objs, float[][] dimensions)
     {
 	float[] min = new float[3];
 	float[] max = new float[3];
-
-	System.out.println("addTraces");
-	for(int i=0; i <= 770; i= i+2)
+       
+	for(int i=0; i <= 570; i= i+2)
 	    {
-
+		
 		float x = pose[0];
 		float y = pose[1];
 		float z = pose[2] - i;
-
-		for(int j=0; j < objs.length; j= j+2)
+		int j = 0;
+		int temper;
+		
+	       	for(temper = 0; temper < objs.length; temper++)
 		    {
+ 
 			min[0] = dimensions[j][0];
 			min[1] = dimensions[j][1];
 			min[2] = dimensions[j][2];
 			max[0] = dimensions[j+1][0];
 			max[1] = dimensions[j+1][1];
 			max[2] = dimensions[j+1][2];
-			
-			if(checkValueInBoundingBox(min, max, pose))
-			   {
-			       System.out.println(objs[j]);
-			       float r = 0.0f;
-			       float g = 1.0f;
-			       float b = 0.0f;
-			       addRayTracingMarker(pose, r, g, b);
-			   }
+		     
+				if(checkValueInBoundingBox(min, max, pose))
+				    {
+					float r = 0.0f;
+					float g = 1.0f;
+					float b = 0.0f;
+					return objs[temper];
+				    }
+				j = j + 2;
+		    
 		    }
-
 	// final Marker m;
 	
 	// m = createMarker();
@@ -430,7 +445,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 	// System.out.println("test");
 	//     }
 	    }
-	
+	return "Empty";
     }
 
 
