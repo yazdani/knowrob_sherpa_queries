@@ -1,4 +1,3 @@
-
 package com.github.knowrob_sherpa_queries;
 import org.ros.message.Duration;
 import java.util.ArrayList;
@@ -225,6 +224,47 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "Cool that worked";
     }
 
+    public String addMarker(float[] pose, String marker){
+	final Marker m;
+	m = createMarker();
+	if(marker.equals("arrow")) 
+	    m.setType(Marker.ARROW);
+	else if(marker.equals("cube"))
+	    m.setType(Marker.CUBE);
+	    
+	m.setMeshUseEmbeddedMaterials(true);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2];
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(1);	
+	m.getScale().setX(1);
+	m.getScale().setY(1);
+	m.getScale().setZ(0.5);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+	
+	return "Cool that worked";
+    }
+
 
     public void visualizeAreas(float[] pose)
     {
@@ -300,6 +340,27 @@ public class VisualizationMarker extends AbstractNodeMain{
 	publishMarkers();
 
     }
+    
+    public float[] getOrigin(float[] pose)
+    {
+	if (pose.length == 16)
+	    {
+		float[] arr = new float[3];
+		arr[0] = pose[3];
+		arr[1] = pose[7];
+		arr[2] = pose[11];
+		return arr;
+	    }else if(pose.length == 7)
+	    {
+		float[] arr = new float[3];
+		arr[0] = pose[0];
+		arr[1] = pose[1];
+		arr[2] = pose[2];
+		return arr;
+	    }
+
+	return pose;
+    }
        
     public String addText(float[] pose, float[] dim, String objname)
     {
@@ -346,11 +407,10 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "";
     }
 
-    public String[] getDetectedObjects(float[][] transforms, String[] objs, float[][] dimensions)
+    public String[] getDetectedObjects(float[][] transforms, String[] objs, float[][] objposes)//, float[][] dimensions)
     {
 	float[] arr = new float[7];
 	List<String> list = new ArrayList<String>();
-
 
 	for(int i = 0; i < transforms.length; i++)
 	    {
@@ -361,7 +421,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 		arr[4] = 0;
 		arr[5] = 0;
 		arr[6] = 1;
-		list.add(addTraces(arr, objs, dimensions));
+		list.add(addTraces(arr, objs, objposes));
 	    }
 	
 
@@ -377,74 +437,61 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     }
 
-    public String addTraces(float[] pose, String[] objs, float[][] dimensions)
+    public String addTraces(float[] pose, String[] objs, float[][] objposes)
     {
 	float[] min = new float[3];
 	float[] max = new float[3];
        
-	for(int i=0; i <= 570; i= i+2)
+	for(int i=0; i <= 350; i= i+2)
 	    {
 		
-		float x = pose[0];
-		float y = pose[1];
-		float z = pose[2] - i;
-		int j = 0;
-		int temper;
 		
-	       	for(temper = 0; temper < objs.length; temper++)
+		min[0] = pose[0];
+		min[1] = pose[1];
+		min[2] = pose[2] - i;
+		String value = checkValueInTransform(min, objs, objposes);
+		
+		if(value != "Empty")
 		    {
- 
-			min[0] = dimensions[j][0];
-			min[1] = dimensions[j][1];
-			min[2] = dimensions[j][2];
-			max[0] = dimensions[j+1][0];
-			max[1] = dimensions[j+1][1];
-			max[2] = dimensions[j+1][2];
-		     
-				if(checkValueInBoundingBox(min, max, pose))
-				    {
-					float r = 0.0f;
-					float g = 1.0f;
-					float b = 0.0f;
-					return objs[temper];
-				    }
-				j = j + 2;
-		    
+			float r = 0.0f;
+			float g = 1.0f;
+			float b = 0.0f;
+			final Marker m;
+			
+			m = createMarker();
+			m.setType(Marker.CYLINDER);
+			m.setMeshUseEmbeddedMaterials(true);
+			
+			m.getPose().getPosition().setX(min[0]);
+			m.getPose().getPosition().setY(min[1]);
+			m.getPose().getPosition().setZ(min[2]);
+			m.getPose().getOrientation().setW(1);
+			m.getPose().getOrientation().setX(0);
+			m.getPose().getOrientation().setY(0);
+			m.getPose().getOrientation().setZ(0);	
+			m.getScale().setX(2);
+			m.getScale().setY(2);
+			m.getScale().setZ(3.0);
+			m.getColor().setR(1);
+			m.getColor().setG(0);
+			m.getColor().setB(0);
+			m.getColor().setA(0.7f);
+			//add marker to map
+			final StringBuilder identifier = new StringBuilder();
+			identifier.append(m.getNs()).append('_').append(m.getId());
+			synchronized(markers) {
+			    markers.put(identifier.toString(),m);
+			}
+			
+			synchronized(markersCache) {
+			    markersCache.put(identifier.toString(),m);
+			}
+			publishMarkers();
+			return value;
 		    }
-	// final Marker m;
-	
-	// m = createMarker();
-	// m.setType(Marker.CYLINDER);
-	// m.setMeshUseEmbeddedMaterials(true);
-	
-	// m.getPose().getPosition().setX(x);
-	// m.getPose().getPosition().setY(y);
-	// m.getPose().getPosition().setZ(z);
-	// m.getPose().getOrientation().setW(1);
-	// m.getPose().getOrientation().setX(0);
-	// m.getPose().getOrientation().setY(1);
-	// m.getPose().getOrientation().setZ(0);	
-	// m.getScale().setX(2);
-	// m.getScale().setY(2);
-	// m.getScale().setZ(2.0);
-	// m.getColor().setR(1);
-	// m.getColor().setG(0);
-	// m.getColor().setB(0);
-	// m.getColor().setA(0.7f);
-	// //add marker to map
-	// final StringBuilder identifier = new StringBuilder();
-	// identifier.append(m.getNs()).append('_').append(m.getId());
-	// synchronized(markers) {
-	//     markers.put(identifier.toString(),m);
-	// }
-	
-	// synchronized(markersCache) {
-	//     markersCache.put(identifier.toString(),m);
-	// }
-	// publishMarkers();
-	// System.out.println("test");
-	//     }
-	    }
+
+
+	    }	    
 	return "Empty";
     }
 
@@ -476,8 +523,151 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     }
 
-    public void addRayTracingMarker(float[] pose, float r, float g, float b)
+    public String checkValueInTransform(float[] trans, String[] objs, float[][] objposes)
     {
+	float[][] arr = new float[25][3];
+
+	int k = trans.length;
+	arr[0][0] = trans[0];
+	arr[0][1] = trans[1];
+	arr[0][2] = trans[2];
+		
+	arr[1][0] = trans[0] + 0.5f;
+	arr[1][1] = trans[1];
+	arr[1][2] = trans[2];
+		
+	arr[2][0] = trans[0] - 0.5f;
+	arr[2][1] = trans[1];
+	arr[2][2] = trans[2];
+	
+	arr[3][0] = trans[0];
+	arr[3][1] = trans[1] + 0.5f;
+	arr[3][2] = trans[2];
+		
+	arr[4][0] = trans[0];
+	arr[4][1] = trans[1] - 0.5f;
+	arr[4][2] = trans[2];
+		
+	arr[5][0] = trans[0] + 0.5f;
+	arr[5][1] = trans[1] - 0.5f;
+	arr[5][2] = trans[2];
+		
+	arr[6][0] = trans[0] - 0.5f;
+	arr[6][1] = trans[1] - 0.5f;
+	arr[6][2] = trans[2];
+	
+	arr[7][0] = trans[0] + 0.5f;
+	arr[7][1] = trans[1] + 0.5f;
+	arr[7][2] = trans[2];
+	
+	arr[8][0] = trans[0] - 0.5f;
+	arr[8][1] = trans[1] + 0.5f;
+	arr[8][2] = trans[2];
+	
+	arr[9][0] = trans[0];
+	arr[9][1] = trans[1] - 1f;
+	arr[9][2] = trans[2];
+		
+	arr[10][0] = trans[0] + 0.5f;
+	arr[10][1] = trans[1] - 1f;
+	arr[10][2] = trans[2];
+	
+	arr[11][0] = trans[0] + 1f;
+	arr[11][1] = trans[1] - 1f;
+	arr[11][2] = trans[2];
+	
+	arr[12][0] = trans[0] - 0.5f;
+	arr[12][1] = trans[1] - 1f;
+	arr[12][2] = trans[2];
+	
+	arr[13][0] = trans[0] - 1f;
+	arr[13][1] = trans[1] - 1f;
+	arr[13][2] = trans[2];
+	
+	arr[14][0] = trans[0] + 1f;
+	arr[14][1] = trans[1] - 0.5f;
+	arr[14][2] = trans[2];
+	
+	arr[15][0] = trans[0] - 1f;
+	arr[15][1] = trans[1] - 0.5f;
+	arr[15][2] = trans[2];
+	
+	arr[16][0] = trans[0] + 1f;
+	arr[16][1] = trans[1];
+	arr[16][2] = trans[2];
+		
+	arr[17][0] = trans[0] - 1f;
+	arr[17][1] = trans[1];
+	arr[17][2] = trans[2];
+	
+	arr[18][0] = trans[0] - 1f;
+	arr[18][1] = trans[1] + 0.5f;
+	arr[18][2] = trans[2];
+		
+	arr[19][0] = trans[0] - 1f;
+	arr[19][1] = trans[1] + 1f;
+	arr[19][2] = trans[2];
+	
+	// arr[j+19][57] = trans[i][0] - 2;
+	// arr[j+19][58] = trans[i][1] + 1;
+	// arr[j+19][59] = trans[i][2];
+	
+	arr[20][0] = trans[0] + 1f;
+	arr[20][1] = trans[1] + 0.5f;
+	arr[20][2] = trans[2];
+	
+	arr[21][0] = trans[0] + 1f;
+	arr[21][1] = trans[1] + 1f;
+	arr[21][2] = trans[2];
+	
+	arr[22][0] = trans[0] + 0.5f;
+	arr[22][1] = trans[1] + 1f;
+	arr[22][2] = trans[2];
+		
+	arr[23][0] = trans[0];
+	arr[23][1] = trans[1] + 1f;
+	arr[23][2] = trans[2];
+		
+	arr[24][0] = trans[0] - 0.5f;
+	arr[24][1] = trans[1] + 1f;
+	arr[24][2] = trans[2];
+
+	for(int i=0; i < objs.length; i++)
+	    {
+		for(int j=0; j < arr.length; j++)
+		    {		
+		      
+			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <= 25.0)
+			    {
+				addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
+
+				return objs[i];
+			    }
+
+		    }
+		
+	    }
+	return "Empty";
+    }
+		
+
+    public double getDistance(float posex, float posey, float posez, float testx, float testy, float testz){
+	double pose1x = (double) posex;
+	double pose1y = (double) posey;
+	double pose1z = (double) posez;
+
+	double pose2x = (double) testx;
+	double pose2y = (double) testy;
+	double pose2z = (double) testz;
+
+	double x =  (pose2x - pose1x) * (pose2x - pose1x);
+	double y =  (pose2y - pose1y) * (pose2y - pose1y);
+	double z =  (pose2z - pose1z) * (pose2z - pose1z);
+		    return Math.sqrt(x + y + z);
+		}
+
+		public void addRayTracingMarker(float[] pose, float r, float g, float b)
+		{
 	float xyz = 0.0f;
 	if( g != 1.0f)
 	    {
@@ -495,11 +685,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 	m.getPose().getPosition().setZ(z);
 	m.getPose().getOrientation().setW(1);
 	m.getPose().getOrientation().setX(0);
-	m.getPose().getOrientation().setY(1);
+	m.getPose().getOrientation().setY(0);
 	m.getPose().getOrientation().setZ(0);	
 	m.getScale().setZ(20.0);
-	m.getScale().setY(20.0);
-	m.getScale().setX(20.0);
+	m.getScale().setY(30.0);
+	m.getScale().setX(30.0);
 	m.getColor().setR(r);
 	m.getColor().setG(g);
 	m.getColor().setB(b);
@@ -617,6 +807,23 @@ public class VisualizationMarker extends AbstractNodeMain{
 	
     }
     
+    public float[] getTaskPose (String str, String btr)
+    {
+	System.out.println("getTaskPose");
+	float[] dezi = new float[7];
+	String spaces[] = str.split(" ");
+	String spaces2[] = btr.split(" ");
+	dezi[0] = Float.parseFloat(spaces[0]);
+	dezi[1] = Float.parseFloat(spaces[1]);
+	dezi[2] = Float.parseFloat(spaces[2]);
+	dezi[3] = Float.parseFloat(spaces2[1]);
+	dezi[4] = Float.parseFloat(spaces2[2]);
+	dezi[5] = Float.parseFloat(spaces2[3]);
+	dezi[6] = Float.parseFloat(spaces2[0]);
+	System.out.println(str);
+	return dezi;
+    }
+
     public void slopeUp(String[] names, float[][] nums)
     {
 	//String[] arr = new String[3];

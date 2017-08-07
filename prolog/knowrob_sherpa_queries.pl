@@ -34,6 +34,8 @@ Copyright (C) 2017 Fereshta Yazdani
        add_name/2,
        add_stext/2,
        add_traces/1,
+       add_speech/2,
+       add_marker/2,
        all_poses/2,
        all_objects_dimensions/2,
        all_objects_transformations/2,
@@ -52,6 +54,11 @@ Copyright (C) 2017 Fereshta Yazdani
        get_objects_MinMax/2, 
        get_object_by_type/2,
        get_objects_by_type/2,
+       get_points_as_polygon/2,
+       get_points_as_array/2,
+       get_points/2,
+       get_origin/2,
+       get_tpose/2,
        goIntoOthermethod/4,
        map_objects_dimensions/2,
        map_objects_transformations/2,
@@ -60,7 +67,8 @@ Copyright (C) 2017 Fereshta Yazdani
        slope/1,
        visualize_agent_location/1,
        visualize_areas/1,
-       visualize_bboxes/1
+       visualize_bboxes/1,
+       visualize_bbox/1
   ]).
 
 :- use_module(library('semweb/rdf_db')).
@@ -73,8 +81,10 @@ Copyright (C) 2017 Fereshta Yazdani
 
 :- rdf_meta sherpa_test(r,r),
     add_arrow(r,r),
+    add_marker(r,r),
     add_name(r,r),
     add_stext(r,r),
+    add_speech(r,r),
     all_objects_dimensions(r,r),
     all_objects_transformations(r,r), 
     all_poses(r,r),
@@ -92,6 +102,11 @@ Copyright (C) 2017 Fereshta Yazdani
     get_object_by_type(r,r),
     get_objects_by_type(r,?),
     get_objects_MinMax(r,r),
+    get_origin(r,r),
+    get_points_as_polygon(r,r),
+    get_points_as_array(r,r),
+    get_points(r,r),
+    get_tpose(r,r),
     goIntoOthermethod(r,r,r,r),
     map_objects_dimensions(r,r),
     map_objects_transformations(r,r),
@@ -100,7 +115,8 @@ Copyright (C) 2017 Fereshta Yazdani
     slope(r),
     visualize_agent_location(r),
     visualize_areas(r),
-    visualize_bboxes(r).
+    visualize_bboxes(r),
+    visualize_bbox(r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(u-map, 'http://knowrob.org/kb/u_map.owl#', [keep(true)]).
@@ -121,14 +137,32 @@ sherpa_interface(SHERPA):-
 current_predicate(v_canvas, _),
 v_canvas(SHERPA).
 
-** visualize_agent_location()
-*
-*
-*
+%% visualize_agent_location()
+%
+%
+%
 visualize_agent_location(T) :-
 sherpa_interface(SHERPA),
-jpl_list_to_array(T,TL),
-jpl_call(SHERPA,'visualizeLocation',[TL],_).
+get_origin(T,Pose),
+jpl_call(SHERPA,'visualizeLocation',[Pose],_).
+
+
+get_origin(Tr,Pose):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Tr,T),
+jpl_call(SHERPA,'getOrigin',[T],Pose).
+
+get_tpose(Task,Pose):-
+sherpa_interface(SHERPA),
+rdf_has(Task, knowrob:'quaternion',literal(type(_X, Q))),
+rdf_has(Task, knowrob:'translation',literal(type(_X, TR))),
+format('TETE'),
+jpl_call(SHERPA,'getTaskPose',[TR,Q],Pose).
+
+add_marker(Pose, Marker) :-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Pose,LPose),
+jpl_call(SHERPA,'addMarker',[LPose, Marker],_).
 
 
 %% add_arrow(+Individual, B)  is det.
@@ -157,6 +191,15 @@ map_objects_transformations(T, ST).
 
 map_objects_transformations([],[]).
 
+add_speech(Cmd,Tr):-
+sherpa_interface(SHERPA),
+    marker(sprite_text('SPEECH'),MarkerObj),
+    marker_color(sprite_text('SPEECH'), [1,1,1]),
+    get_origin(Tr,Pose),
+jpl_array_to_list(Pose,LPose),
+    marker_translation(MarkerObj,LPose),
+    format(atom(TextHtml),'<div style="front-size: 18px; font-style: italic; font-family:Oswald,Arial,Helvetica,sans-serif; text-align: center;">~w</div>',[Cmd]),
+marker_text(MarkerObj,TextHtml),marker_scale(MarkerObj,[3.0,3.0,3.0]).
 
 all_objects_dimensions(Obj,Poses):-
     map_object_dimensions(Obj,W,D,H),
@@ -182,8 +225,8 @@ jpl_call(SHERPA,'addText',[OA,LA,Obj],B).
 
 add_name(N,Tr) :-
 sherpa_interface(SHERPA),
-jpl_list_to_array(Tr,TL),
-jpl_call(SHERPA,'addNameText',[N,TL],_).
+get_origin(Tr,T),
+jpl_call(SHERPA,'addNameText',[N,T],_).
 
 %% clear_marker is det.
 %
@@ -241,6 +284,9 @@ visualize_bboxes(A):-
 get_objects_by_type(A, Objs),
     forall(member(X,Objs),callVisualizer(X)).
 
+visualize_bbox(A):-
+callVisualizer(A).
+
 callVisualizer(A):-
   sherpa_interface(SHERPA),
 current_object_pose(A,P),
@@ -265,7 +311,8 @@ entering_succeeded(Pose,Poses):-
 jpl_list_to_array(Pose,Sose),
 Poses = Sose.
 
-entering_failed(_).
+entering_failed(_):-
+format('failed mongodb_lookup\n').
 
 get_all_timepoint_poses(Link,[H|T],[SH|ST]):-
 all_timepoint_poses(Link, H,P),
@@ -288,18 +335,17 @@ get_all_poses(T, ST).
 get_all_poses([],[]).
 
 get_all_detected_regions(Link, T1, T2, Arr):-
-sherpa_interface(SHERPA),
 get_all_timepoints(Link, T1, T2, TL),
 jpl_array_to_list(TL,TA),
 get_all_timepoint_poses(Link,TA, TP),
 map_root_objects('http://knowrob.org/kb/u_map.owl#USemMap_twoY',Objs),
 map_objects_transformations(Objs, Trans),
-map_objects_dimensions(Objs, Dims),
+%map_objects_dimensions(Objs, Dims),
 jpl_list_to_array(Objs,LObjs),
 jpl_list_to_array(Trans,LTrans),
-jpl_list_to_array(Dims,LDims),
-jpl_call(SHERPA,'getObjectsMinMax',[LObjs, LTrans, LDims], LANA),
-goIntoOthermethod(TP,LObjs,LANA, Arr).
+%jpl_list_to_array(Dims,LDims),
+%jpl_call(SHERPA,'getObjectsMinMax',[LObjs, LTrans, LDims], LANA),
+goIntoOthermethod(TP,LObjs,LTrans, Arr).
 
 goIntoOthermethod(TP,LObjs,E, Arr):-
 sherpa_interface(SHERPA),
@@ -307,4 +353,25 @@ jpl_list_to_array(TP,TA),
 jpl_call(SHERPA, 'getDetectedObjects', [TA, LObjs, E], Arr).
 
 
+get_points_as_polygon(Tr,Arr):-
+sherpa_interface(SHERPA),
+get_points(Tr,T),
+jpl_list_to_array(T,R),
+jpl_call(SHERPA, 'getPointsAsPolygon', [R], Arr).
+
+get_points_as_array(Point, Arr):-
+jpl_list_to_array(Point,Sose),
+Arr = Sose.
+
+get_points([H|T],[SH|ST]):-
+get_points_as_array(H,P),
+SH = P,
+get_points(T, ST).
+
+get_points([],[]).
+
 get_objects_MinMax(_,_).
+
+
+% 13 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_150IF
+% 14 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_rFdy

@@ -35,3 +35,4 @@
 :- register_ros_package(knowrob_objects).
 
 :- use_module(library('knowrob_sherpa_queries')).
+:- rdf_db:rdf_register_ns(unreal, 'http://knowrob.org/kb/unreal_log.owl#', [keep(true)]).
