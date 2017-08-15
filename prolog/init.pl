@@ -36,3 +36,6 @@
 
 :- use_module(library('knowrob_sherpa_queries')).
 :- rdf_db:rdf_register_ns(unreal, 'http://knowrob.org/kb/unreal_log.owl#', [keep(true)]).
+:- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapSherpa.owl').
+:- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapTracks.owl').
+:- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapGIS.owl').
