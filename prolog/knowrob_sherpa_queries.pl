@@ -30,27 +30,38 @@ Copyright (C) 2017 Fereshta Yazdani
 
 :- module(knowrob_sherpa_queries,
       [
+       regions_not_scanned/4,
+       goIntoNoScanMethod/5,
+       set_keywords_as_markerobjs/1,
        add_arrow/2,
        add_name/2,
+       add_tenName/2,
        add_stext/2,
        add_traces/1,
        add_speech/2,
+       get_atomlist_from_stringlist/2,
+       remove_speech/1,
        add_marker/2,
        all_poses/2,
        all_objects_dimensions/2,
        all_objects_transformations/2,
        all_timepoint_poses/3,
+       add_entity/2,
        callAll/1,
        callSlope/1,
        callVisualizer/1,
+       cam_pose/1,
        clear_marker/0,
        detected_object/1,
        entering_succeeded/2,
+       get_pose_of_transform/2,
        entering_failed/1,
+       is_element_in_list/3,
        get_all_detected_regions/4,
        get_all_poses/2,
        get_all_timepoint_poses/3,
        get_all_timepoints/4,
+       get_next_timepoint/3,
        get_objects_MinMax/2, 
        get_object_by_type/2,
        get_objects_by_type/2,
@@ -59,16 +70,22 @@ Copyright (C) 2017 Fereshta Yazdani
        get_points/2,
        get_origin/2,
        get_tpose/2,
+       get_elements/3,
+       get_previous_timepoint/3,
        goIntoOthermethod/4,
+       is_part_of/3,
        map_objects_dimensions/2,
        map_objects_transformations/2,
+       set_timepoint/2,
        sherpa_interface/0,
        sherpa_interface/1,
        slope/1,
+       possible_object_location/2,
        visualize_agent_location/1,
        visualize_areas/1,
        visualize_bboxes/1,
-       visualize_bbox/1
+       visualize_bbox/1,
+       view_image/1
   ]).
 
 :- use_module(library('semweb/rdf_db')).
@@ -80,11 +97,19 @@ Copyright (C) 2017 Fereshta Yazdani
 :- use_module(library('jpl')).
 
 :- rdf_meta sherpa_test(r,r),
+    regions_not_scanned(r,r,r,r),
+    goIntoNoScanMethod(r,r,r,r,r),
+    set_keywords_as_markerobjs(r),
+    get_atomlist_from_stringlist(r,r),
     add_arrow(r,r),
     add_marker(r,r),
     add_name(r,r),
+    add_tenName(r,r),
+    add_entity(r,r),
     add_stext(r,r),
+    get_pose_of_transform(r, r),
     add_speech(r,r),
+    remove_speech(r),
     all_objects_dimensions(r,r),
     all_objects_transformations(r,r), 
     all_poses(r,r),
@@ -92,13 +117,17 @@ Copyright (C) 2017 Fereshta Yazdani
     callAll(r),
     callSlope(r),
     callVisualizer(r),
+    cam_pose(r),
     detected_object(r),
+    possible_object_location(r,r),
     entering_failed(r),
     entering_succeeded(r,r),
     get_all_detected_regions(r,r,r,r),
     get_all_poses(r,r),
+    get_previous_timepoint(r,r,r),
     get_all_timepoint_poses(r,r,r),
     get_all_timepoints(r,r,r,r),
+    get_next_timepoint(r,r,r),
     get_object_by_type(r,r),
     get_objects_by_type(r,?),
     get_objects_MinMax(r,r),
@@ -107,15 +136,20 @@ Copyright (C) 2017 Fereshta Yazdani
     get_points_as_array(r,r),
     get_points(r,r),
     get_tpose(r,r),
+    get_elements(r,r,r),
     goIntoOthermethod(r,r,r,r),
+    is_part_of(r,r,r),
     map_objects_dimensions(r,r),
     map_objects_transformations(r,r),
+    set_timepoint(r,r),
     sherpa_interface(r),
     sherpa_interface2(r),
     slope(r),
+    is_element_in_list(r,r,r),
     visualize_agent_location(r),
     visualize_areas(r),
     visualize_bboxes(r),
+    view_image(r),
     visualize_bbox(r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
@@ -146,6 +180,12 @@ sherpa_interface(SHERPA),
 get_origin(T,Pose),
 jpl_call(SHERPA,'visualizeLocation',[Pose],_).
 
+remove_speech(Cmd):-
+marker(sprite_text('SPEECH'),MarkerObj),
+format(atom(TextHtml),'<div style="front-size: 18px; font-style: italic; font-family:Oswald,Arial,Helvetica,sans-serif; text-align: center;">~w</div>',[Cmd]), 
+marker_text(MarkerObj,TextHtml), 
+marker_remove(MarkerObj),
+clear_marker.
 
 get_origin(Tr,Pose):-
 sherpa_interface(SHERPA),
@@ -156,7 +196,6 @@ get_tpose(Task,Pose):-
 sherpa_interface(SHERPA),
 rdf_has(Task, knowrob:'quaternion',literal(type(_X, Q))),
 rdf_has(Task, knowrob:'translation',literal(type(_X, TR))),
-format('TETE'),
 jpl_call(SHERPA,'getTaskPose',[TR,Q],Pose).
 
 add_marker(Pose, Marker) :-
@@ -172,7 +211,9 @@ jpl_call(SHERPA,'addMarker',[LPose, Marker],_).
 %
 add_arrow(Obj,B) :-
 sherpa_interface(SHERPA),
+format(Obj),
 current_object_pose(Obj,Pose),
+format(Obj),
 jpl_list_to_array(Pose,OA),
 map_object_dimensions(Obj,W,D,H),
 append([W, D, H],[], L),
@@ -192,7 +233,6 @@ map_objects_transformations(T, ST).
 map_objects_transformations([],[]).
 
 add_speech(Cmd,Tr):-
-sherpa_interface(SHERPA),
     marker(sprite_text('SPEECH'),MarkerObj),
     marker_color(sprite_text('SPEECH'), [1,1,1]),
     get_origin(Tr,Pose),
@@ -228,6 +268,12 @@ sherpa_interface(SHERPA),
 get_origin(Tr,T),
 jpl_call(SHERPA,'addNameText',[N,T],_).
 
+add_tenName(N,Tr) :-
+sherpa_interface(SHERPA),
+get_origin(Tr,T),
+jpl_call(SHERPA,'addName10Text',[N,T],_).
+
+
 %% clear_marker is det.
 %
 % clears all the markers.
@@ -239,6 +285,11 @@ jpl_call(SHERPA, 'clear', [], _).
 get_all_timepoints(L,T1,T2,LA):-
 sherpa_interface(SHERPA),
 jpl_call(SHERPA,'getAllTimepoints', [L,T1,T2,3.0],LA).
+
+possible_object_location(Name,Tr):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Tr, T),
+jpl_call(SHERPA,'posObjLoc',[Name, T],_).
 
 %% detected_object(+Individual) is det.
 %
@@ -323,6 +374,7 @@ get_all_timepoint_poses(_,[],[]).
 
 
 all_poses(Number,Poses):-
+format(Number),
     current_object_pose(Number,P),
 jpl_list_to_array(P,S),
 Poses = S.
@@ -333,6 +385,37 @@ all_poses(H,P),
 get_all_poses(T, ST).
 
 get_all_poses([],[]).
+
+regions_not_scanned(Link, T1, T2, A):-
+get_all_timepoints(Link, T1, T2, TL),
+jpl_array_to_list(TL,LTP),
+get_all_timepoint_poses(Link,LTP, TP),
+findall(Obj, (owl_individual_of(Obj, knowrob:'Roofing')), Objs),
+findall(Rof, (owl_individual_of(Rof, knowrob:'RoofingPart')), Rofs),
+map_objects_transformations(Objs, Trans),
+jpl_list_to_array(Objs,LObjs),
+jpl_list_to_array(Rofs,LRofs),
+jpl_list_to_array(Trans,LTrans),
+goIntoNoScanMethod(TP,LObjs,LTrans, LRofs, A).
+
+goIntoNoScanMethod(TP, LObjs, E, LRofs, A):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(TP,TA),
+jpl_call(SHERPA, 'getNotDetectedRoofings', [TA, LObjs, E, LRofs], B),
+jpl_array_to_list(B,P),
+set_keywords_as_markerobjs(P),
+=(A,P).
+
+
+set_keywords_as_markerobjs([H|T]):-
+current_object_pose(H, Pose),
+add_tenName('Region-Not-Detected',Pose),
+marker(object(H), Obj), 
+marker_color(Obj, [1.0,0.0,0.0,1.0]),
+marker_update(Obj),
+set_keywords_as_markerobjs(T).
+
+set_keywords_as_markerobjs([]).
 
 get_all_detected_regions(Link, T1, T2, Arr):-
 get_all_timepoints(Link, T1, T2, TL),
@@ -348,6 +431,7 @@ jpl_list_to_array(Trans,LTrans),
 goIntoOthermethod(TP,LObjs,LTrans, Arr).
 
 goIntoOthermethod(TP,LObjs,E, Arr):-
+format('goIntoOthermethod'),
 sherpa_interface(SHERPA),
 jpl_list_to_array(TP,TA),
 jpl_call(SHERPA, 'getDetectedObjects', [TA, LObjs, E], Arr).
@@ -372,6 +456,62 @@ get_points([],[]).
 
 get_objects_MinMax(_,_).
 
+get_next_timepoint(Timepoint, LTimepoint,Result):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(LTimepoint,LTimes),
+jpl_call(SHERPA,'getNextTimepoint',[LTimes,Timepoint],Result).
+
+get_previous_timepoint(Timepoint, LTimepoint,Result):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(LTimepoint,LTimes),
+jpl_call(SHERPA,'getPreviousTimepoint',[LTimes,Timepoint],Result).
+
+set_timepoint(_,_).
+
+view_image(Img):-
+atom_concat('Rescue-Mission/scenario_0/episode_0/',Img,Res),
+designator_publish_image(Res).
+
+cam_pose(Pose):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Pose,Array),
+jpl_call(SHERPA,'getPosition',[Array],Origin),
+jpl_call(SHERPA,'getOrientation',[Array],Orientation),
+jpl_array_to_list(Origin,Lori),
+jpl_array_to_list(Orientation,Lorient),
+camera_pose(Lori,Lorient).
+
+get_elements(L,String,Result):-
+is_element_in_list(L,String,End),
+delete(End,'',Result).
+
+is_element_in_list([H|T],String,[S|K]):-
+is_part_of(H,String,S),
+is_element_in_list(T,String,K).
+
+is_element_in_list([],_,[]).
+
+is_part_of(String,Substring,Result):-
+sub_string(String,_,_,_,Substring)
+->append(_,String,Result);append(_,'',Result).
+
+get_atomlist_from_stringlist([H|T],[AH|AT]):-
+atom_number(H, E),
+AH = E,
+get_atomlist_from_stringlist(T,AT).
+
+get_atomlist_from_stringlist([],[]).
+
+add_entity(Name,Pose):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Pose,P),
+jpl_call(SHERPA,'addRobotMarker',[Name,P],_).
+
+
+get_pose_of_transform(Trans, Pose):-
+sherpa_interface(SHERPA),
+jpl_list_to_array(Trans,T),
+jpl_call(SHERPA,'transformToPose',[T],Pose).
 
 % 13 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_150IF
 % 14 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_rFdy

@@ -188,6 +188,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 // jpl_call(SHERPA,'addArrow',[ARR],FIN).
     //public String addArrow(float[] pose) {
     public String addArrow(float[] pose, float[] dim){
+	System.out.println("addArrow");
 	final Marker m;
 	m = createMarker();
 	m.setType(Marker.ARROW);
@@ -340,6 +341,105 @@ public class VisualizationMarker extends AbstractNodeMain{
 	publishMarkers();
 
     }
+
+    public void addEntityMarker(String name, float[] pose)
+    {
+	String value="";
+        int zvalue = 0;
+	if(name.contains("Donkey"))
+	    {
+		value = "package://sim/unreal_meshes/Robots/Donkey_green.dae";
+		zvalue = 2;
+	    }else if(name.contains("Red"))
+	    {
+		value = "package://sim/unreal_meshes/Robots/RedWasp_green.dae";
+		zvalue = 15;
+	    }else if(name.contains("Blue"))
+	    {
+		value = "package://sim/unreal_meshes/Robots/BlueWasp_green.dae";
+		zvalue = 15;
+	    }else if(name.contains("Hang"))
+	    {
+		value = "package://sim/unreal_meshes/Robots/Kite_green.dae";
+		zvalue = 0;
+	    }else
+	    {
+		value = "package://sim/unreal_meshes/Robots/Hawk_green.dae";
+		zvalue = 3;
+	    }
+
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.MESH_RESOURCE);
+	m.setMeshUseEmbeddedMaterials(true);
+	m.setMeshResource(value);
+	float x = pose[0];
+	float y = pose[1];
+	float z = pose[2]+zvalue;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(0);
+	m.getScale().setX(8.0);
+	m.getScale().setY(8.0);
+	m.getScale().setZ(8.0);
+	m.getColor().setR(0);
+	m.getColor().setG(1);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+    }
+
+
+
+ public void addName10Text(String name, float[] transform)
+    {
+	final Marker m;
+	m = createMarker();
+	m.setType(Marker.TEXT_VIEW_FACING);
+	m.setMeshUseEmbeddedMaterials(true);
+	m.setText(name);
+	float x = transform[0];
+	float y = transform[1];
+	float z = transform[2]+20;
+	m.getPose().getPosition().setX(x);
+	m.getPose().getPosition().setY(y);
+	m.getPose().getPosition().setZ(z);
+	m.getPose().getOrientation().setW(1);
+	m.getPose().getOrientation().setX(0);
+	m.getPose().getOrientation().setY(0);
+	m.getPose().getOrientation().setZ(0);	
+	m.getScale().setZ(4.0);
+	m.getColor().setR(1);
+	m.getColor().setG(0);
+	m.getColor().setB(0);
+	m.getColor().setA(1.0f);
+  	 	 //add marker to map
+	final StringBuilder identifier = new StringBuilder();
+	identifier.append(m.getNs()).append('_').append(m.getId());
+	synchronized(markers) {
+	    markers.put(identifier.toString(),m);
+	}
+	
+	synchronized(markersCache) {
+	    markersCache.put(identifier.toString(),m);
+	}
+	publishMarkers();
+
+    }
     
     public float[] getOrigin(float[] pose)
     {
@@ -407,6 +507,65 @@ public class VisualizationMarker extends AbstractNodeMain{
 	return "";
     }
 
+    public String[] getNotDetectedRoofings(float[][] transforms, String[] objs, float[][] objposes, String[] rofs)
+    {
+	float[] arr = new float[7];
+	List<String> list = new ArrayList<String>();
+
+	for(int i = 0; i < transforms.length; i++)
+	    {
+		arr[0] = transforms[i][3];
+		arr[1] = transforms[i][7];
+		arr[2] = transforms[i][11];
+		arr[3] = 0;
+		arr[4] = 0;
+		arr[5] = 0;
+		arr[6] = 1;
+		list.add(addTracesOnNotDetectedObjects(arr, objs, objposes));
+	    }
+
+     LinkedHashSet<String> lhs = new LinkedHashSet<String>();
+     lhs.addAll(list);
+     list.clear();
+     list.addAll(lhs);
+     list.removeAll(Collections.singleton("Empty"));
+     String[] array = new String[list.size()];
+     array = list.toArray(array); 
+     List<String> rofarray = new ArrayList<String>();
+	 //String rofarray = new String[array.length];
+     for(int j = 0; j < array.length; j ++)
+	 {
+	     String value = getSplit(array[j]);
+	     for(int k = 0; k < rofs.length; k++)
+		 {
+		     if(rofs[k].contains(value))
+			 {
+			     rofarray.add(rofs[k]);
+			     break;
+			 }else
+			 {
+			     rofarray.add("Empty");
+			 }
+		 }
+	 }
+
+     LinkedHashSet<String> rhs = new LinkedHashSet<String>();
+     rhs.addAll(rofarray);
+     rofarray.clear();
+     rofarray.addAll(rhs);
+     rofarray.removeAll(Collections.singleton("Empty"));
+     String[] barray = new String[rofarray.size()];
+     barray = rofarray.toArray(barray); 
+     //    String rofarray = new String[array.length];
+          
+
+
+     return barray;
+    }
+
+
+
+
     public String[] getDetectedObjects(float[][] transforms, String[] objs, float[][] objposes)//, float[][] dimensions)
     {
 	float[] arr = new float[7];
@@ -437,6 +596,29 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     }
 
+    public String addTracesOnNotDetectedObjects(float[] pose, String[] objs, float[][] objposes)
+    {
+	float[] min = new float[3];
+	float[] max = new float[3];
+       
+	for(int i=0; i <= 350; i= i+2)
+	    {
+		
+		
+		min[0] = pose[0];
+		min[1] = pose[1];
+		min[2] = pose[2] - i;
+		String value = checkValueInTransformForNotDetectedObjects(min, objs, objposes);
+		if(value != "Empty")
+		    {
+			return value;
+		    }
+
+
+	    }	    
+	return "Empty";
+    }
+
     public String addTraces(float[] pose, String[] objs, float[][] objposes)
     {
 	float[] min = new float[3];
@@ -450,9 +632,9 @@ public class VisualizationMarker extends AbstractNodeMain{
 		min[1] = pose[1];
 		min[2] = pose[2] - i;
 		String value = checkValueInTransform(min, objs, objposes);
-		
 		if(value != "Empty")
 		    {
+			System.out.println(value);
 			float r = 0.0f;
 			float g = 1.0f;
 			float b = 0.0f;
@@ -469,11 +651,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 			m.getPose().getOrientation().setX(0);
 			m.getPose().getOrientation().setY(0);
 			m.getPose().getOrientation().setZ(0);	
-			m.getScale().setX(2);
-			m.getScale().setY(2);
-			m.getScale().setZ(3.0);
-			m.getColor().setR(1);
-			m.getColor().setG(0);
+			m.getScale().setX(8);
+			m.getScale().setY(8);
+			m.getScale().setZ(5.0);
+			m.getColor().setR(0);
+			m.getColor().setG(1);
 			m.getColor().setB(0);
 			m.getColor().setA(0.7f);
 			//add marker to map
@@ -487,6 +669,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 			    markersCache.put(identifier.toString(),m);
 			}
 			publishMarkers();
+			System.out.println(value);
 			return value;
 		    }
 
@@ -523,8 +706,9 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     }
 
-    public String checkValueInTransform(float[] trans, String[] objs, float[][] objposes)
+    public String checkValueInTransformForNotDetectedObjects(float[] trans, String[] objs, float[][] objposes)
     {
+	//	System.out.println("check-value-in-transform");
 	float[][] arr = new float[25][3];
 
 	int k = trans.length;
@@ -634,13 +818,145 @@ public class VisualizationMarker extends AbstractNodeMain{
 
 	for(int i=0; i < objs.length; i++)
 	    {
+		//	System.out.println("object_list: "+objs[i]);
 		for(int j=0; j < arr.length; j++)
-		    {		
-		      
+		    {	
+			//	System.out.println("get-distance: " +getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]));
+		     
 			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <= 25.0)
 			    {
-				addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
+			       	//addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
+				///	System.out.println(objs[i]);
+				return objs[i];
+			    }
 
+		    }
+		
+	    }
+	return "Empty";
+    }
+
+    public String checkValueInTransform(float[] trans, String[] objs, float[][] objposes)
+    {
+	//	System.out.println("check-value-in-transform");
+	float[][] arr = new float[25][3];
+
+	int k = trans.length;
+	arr[0][0] = trans[0];
+	arr[0][1] = trans[1];
+	arr[0][2] = trans[2];
+		
+	arr[1][0] = trans[0] + 0.5f;
+	arr[1][1] = trans[1];
+	arr[1][2] = trans[2];
+		
+	arr[2][0] = trans[0] - 0.5f;
+	arr[2][1] = trans[1];
+	arr[2][2] = trans[2];
+	
+	arr[3][0] = trans[0];
+	arr[3][1] = trans[1] + 0.5f;
+	arr[3][2] = trans[2];
+		
+	arr[4][0] = trans[0];
+	arr[4][1] = trans[1] - 0.5f;
+	arr[4][2] = trans[2];
+		
+	arr[5][0] = trans[0] + 0.5f;
+	arr[5][1] = trans[1] - 0.5f;
+	arr[5][2] = trans[2];
+		
+	arr[6][0] = trans[0] - 0.5f;
+	arr[6][1] = trans[1] - 0.5f;
+	arr[6][2] = trans[2];
+	
+	arr[7][0] = trans[0] + 0.5f;
+	arr[7][1] = trans[1] + 0.5f;
+	arr[7][2] = trans[2];
+	
+	arr[8][0] = trans[0] - 0.5f;
+	arr[8][1] = trans[1] + 0.5f;
+	arr[8][2] = trans[2];
+	
+	arr[9][0] = trans[0];
+	arr[9][1] = trans[1] - 1f;
+	arr[9][2] = trans[2];
+		
+	arr[10][0] = trans[0] + 0.5f;
+	arr[10][1] = trans[1] - 1f;
+	arr[10][2] = trans[2];
+	
+	arr[11][0] = trans[0] + 1f;
+	arr[11][1] = trans[1] - 1f;
+	arr[11][2] = trans[2];
+	
+	arr[12][0] = trans[0] - 0.5f;
+	arr[12][1] = trans[1] - 1f;
+	arr[12][2] = trans[2];
+	
+	arr[13][0] = trans[0] - 1f;
+	arr[13][1] = trans[1] - 1f;
+	arr[13][2] = trans[2];
+	
+	arr[14][0] = trans[0] + 1f;
+	arr[14][1] = trans[1] - 0.5f;
+	arr[14][2] = trans[2];
+	
+	arr[15][0] = trans[0] - 1f;
+	arr[15][1] = trans[1] - 0.5f;
+	arr[15][2] = trans[2];
+	
+	arr[16][0] = trans[0] + 1f;
+	arr[16][1] = trans[1];
+	arr[16][2] = trans[2];
+		
+	arr[17][0] = trans[0] - 1f;
+	arr[17][1] = trans[1];
+	arr[17][2] = trans[2];
+	
+	arr[18][0] = trans[0] - 1f;
+	arr[18][1] = trans[1] + 0.5f;
+	arr[18][2] = trans[2];
+		
+	arr[19][0] = trans[0] - 1f;
+	arr[19][1] = trans[1] + 1f;
+	arr[19][2] = trans[2];
+	
+	// arr[j+19][57] = trans[i][0] - 2;
+	// arr[j+19][58] = trans[i][1] + 1;
+	// arr[j+19][59] = trans[i][2];
+	
+	arr[20][0] = trans[0] + 1f;
+	arr[20][1] = trans[1] + 0.5f;
+	arr[20][2] = trans[2];
+	
+	arr[21][0] = trans[0] + 1f;
+	arr[21][1] = trans[1] + 1f;
+	arr[21][2] = trans[2];
+	
+	arr[22][0] = trans[0] + 0.5f;
+	arr[22][1] = trans[1] + 1f;
+	arr[22][2] = trans[2];
+		
+	arr[23][0] = trans[0];
+	arr[23][1] = trans[1] + 1f;
+	arr[23][2] = trans[2];
+		
+	arr[24][0] = trans[0] - 0.5f;
+	arr[24][1] = trans[1] + 1f;
+	arr[24][2] = trans[2];
+
+	for(int i=0; i < objs.length; i++)
+	    {
+		//	System.out.println("object_list: "+objs[i]);
+		for(int j=0; j < arr.length; j++)
+		    {	
+			//	System.out.println("get-distance: " +getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]));
+		     
+			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <= 25.0)
+			    {
+			       	addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
+				///	System.out.println(objs[i]);
 				return objs[i];
 			    }
 
@@ -688,8 +1004,8 @@ public class VisualizationMarker extends AbstractNodeMain{
 	m.getPose().getOrientation().setY(0);
 	m.getPose().getOrientation().setZ(0);	
 	m.getScale().setZ(20.0);
-	m.getScale().setY(30.0);
-	m.getScale().setX(30.0);
+	m.getScale().setY(50.0);
+	m.getScale().setX(50.0);
 	m.getColor().setR(r);
 	m.getColor().setG(g);
 	m.getColor().setB(b);
@@ -806,6 +1122,17 @@ public class VisualizationMarker extends AbstractNodeMain{
 	//	 return "Cool that worked2";
 	
     }
+
+    public void posObjLoc(String name, float[] transform)
+    {
+	float[] getOrigin = getOrigin(transform);
+	float[] tmparray = new float[3];
+	tmparray[0] = getOrigin[0] + 2;
+	tmparray[1] = getOrigin[1] + 2;
+	tmparray[2] = getOrigin[2] - 13;
+	addSlopeArrow(tmparray, 1.0f, 1.0f, 0.0f, 1.0f);
+	addNameText(name, getOrigin);
+    } 
     
     public float[] getTaskPose (String str, String btr)
     {
@@ -1092,6 +1419,16 @@ public class VisualizationMarker extends AbstractNodeMain{
     }
 
 
+    public float[] transformToPose(float[] transform)
+    {
+	float[] arr = new float[3];
+	arr[0] = transforms[3];
+	arr[1] = transforms[7];
+	arr[2] = transforms[11];
+	
+	return arr;
+    }
+
     public void visualizeLocation(float[] transform)
     {
 	final Marker m;
@@ -1131,6 +1468,9 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     public String[] Roadneighbours()
     {
+	     // "http://knowrob.org/kb/unreal_log.owl#RoadSegment_MB6X",
+	     // 		     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test087",
+	     // 		     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test006",
 	String[] newArray = {"http://knowrob.org/kb/unreal_log.owl#RoadSegment_ULIF",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_CL1P",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_T0KO",
@@ -1147,7 +1487,6 @@ public class VisualizationMarker extends AbstractNodeMain{
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_ymF2",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test088",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_MB6X",
-			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test087",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_test006",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_O5lp",
 			     "http://knowrob.org/kb/unreal_log.owl#RoadSegment_a2li",
@@ -1318,6 +1657,187 @@ public class VisualizationMarker extends AbstractNodeMain{
 	
 	return array;
 
+    }
+
+    public String getNextTimepoint(String[] timepoints, String timepoint)
+    {	
+	for(int i=0; i < timepoints.length; i++)
+	    {
+		System.out.println(timepoints[i]);
+
+		if(timepoints[i].contains(":") && !timepoints[i].contains("#")){
+		    String[] knowrob_split = timepoints[i].split(":");
+		    String[] timepoint_split = knowrob_split[1].split("_");
+		    double x = Double.parseDouble(timepoint);
+		    double w = Double.parseDouble(timepoint);
+		    System.out.println(w);
+		    System.out.println(timepoint_split[1]);
+		    double y = Double.parseDouble(timepoint_split[1]);
+		    System.out.println(x);
+		    System.out.println(y);
+		    if(x < y)
+			{
+			    String z = timepoints[i];
+			    return z;
+			}
+		    
+		}else if(timepoints[i].contains(":"))
+	        {
+			String[] knowrob_split = timepoints[i].split("#");
+			String[] timepoint_split = knowrob_split[1].split("_");
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoint_split[1]);
+			double y = Double.parseDouble(timepoint_split[1]);
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y)
+			    {
+				String z = timepoints[i];
+				return z;
+			    }
+		}else  if(timepoints[i].contains("_"))
+		    {
+			String[] timepoint_split = timepoints[i].split("_");
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoint_split[1]);
+			double y = Double.parseDouble(timepoint_split[1]);
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y)
+			    {
+				String z = timepoints[i];
+				return z;
+			    }
+		    }else
+		    {
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoints[i]     );
+			double y = Double.parseDouble(timepoints[i] );
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y)
+			    {
+				String z = timepoints[i];
+				return z;
+			    }
+		    }
+
+	    }
+	
+	return timepoint;
+    }
+
+    public String getSplit(String value)
+    {
+	if(value.contains(":") && value.contains("#"))
+	    {
+		String[] split = value.split("#");
+		return split[1];
+	    }else
+	    if(value.contains(":") && !value.contains("#"))
+		{
+		    String[] split = value.split(":");
+		    return split[1];
+		}
+	return value;
+    }
+
+    public String getPreviousTimepoint(String[] timepoints, String timepoint)
+    {	
+	for(int i=0; i < timepoints.length; i++)
+	    {
+		System.out.println(timepoints[i]);
+
+		if(timepoints[i].contains(":") && !timepoints[i].contains("#")){
+		    String[] knowrob_split = timepoints[i].split(":");
+		    String[] timepoint_split = knowrob_split[1].split("_");
+		    double x = Double.parseDouble(timepoint);
+		    double w = Double.parseDouble(timepoint);
+		    System.out.println(w);
+		    System.out.println(timepoint_split[1]);
+		    double y = Double.parseDouble(timepoint_split[1]);
+		    System.out.println(x);
+		    System.out.println(y);
+		    if(x < y && i > 0)
+			{
+			    String z = timepoints[i-1];
+			    return z;
+			}
+		    
+		}else if(timepoints[i].contains(":"))
+	        {
+			String[] knowrob_split = timepoints[i].split("#");
+			String[] timepoint_split = knowrob_split[1].split("_");
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoint_split[1]);
+			double y = Double.parseDouble(timepoint_split[1]);
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y && i > 0)
+			    {
+				String z = timepoints[i-1];
+				return z;
+			    }
+		}else  if(timepoints[i].contains("_"))
+		    {
+			String[] timepoint_split = timepoints[i].split("_");
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoint_split[1]);
+			double y = Double.parseDouble(timepoint_split[1]);
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y)
+			    {
+				String z = timepoints[i];
+				return z;
+			    }
+		    }else if(i>0)
+		    {
+			double x = Double.parseDouble(timepoint);
+			double w = Double.parseDouble(timepoint);
+			System.out.println(w);
+			System.out.println(timepoints[i]);
+			double y = Double.parseDouble(timepoints[i]);
+			System.out.println(x);
+			System.out.println(y);
+			if(x < y)
+			    {
+				String z = timepoints[i-1];
+				return z;
+			    }
+		    }
+	    }
+	
+	return timepoint;
+    }
+
+    public float[] getPosition(float[] vec)
+    {
+	float[] arr = new float[3];
+	arr[0] = vec[0];
+	arr[1] = vec[1];
+	arr[2] = vec[2];
+	return arr;
+    }
+
+    public float[] getOrientation(float[] vec)
+    {
+	float[] arr = new float[4];
+	arr[0] = vec[3];
+	arr[1] = vec[4];
+	arr[2] = vec[5];
+	arr[3] = vec[6];
+	return arr;
     }
 
 	/**
