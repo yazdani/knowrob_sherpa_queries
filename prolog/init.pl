@@ -39,3 +39,4 @@
 :- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapSherpa.owl').
 :- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapTracks.owl').
 :- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapGIS.owl').
+:- owl_parser:owl_parse('package://sherpa_world/owl/SemanticMapRoofings.owl').
