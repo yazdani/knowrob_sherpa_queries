@@ -72,6 +72,8 @@ Copyright (C) 2017 Fereshta Yazdani
        get_tpose/2,
        get_elements/3,
        get_previous_timepoint/3,
+       get_regions/2,
+       visualize_meshes/1,
        goIntoOthermethod/4,
        is_part_of/3,
        map_objects_dimensions/2,
@@ -85,6 +87,7 @@ Copyright (C) 2017 Fereshta Yazdani
        visualize_areas/1,
        visualize_bboxes/1,
        visualize_bbox/1,
+       visualize_mesh/1,
        view_image/1
   ]).
 
@@ -124,6 +127,8 @@ Copyright (C) 2017 Fereshta Yazdani
     entering_succeeded(r,r),
     get_all_detected_regions(r,r,r,r),
     get_all_poses(r,r),
+    get_regions(r,r),
+    visualize_meshes(r),
     get_previous_timepoint(r,r,r),
     get_all_timepoint_poses(r,r,r),
     get_all_timepoints(r,r,r,r),
@@ -150,6 +155,7 @@ Copyright (C) 2017 Fereshta Yazdani
     visualize_areas(r),
     visualize_bboxes(r),
     view_image(r),
+    visualize_mesh(r),
     visualize_bbox(r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
@@ -331,6 +337,7 @@ visualize_areas(A):-
     jpl_list_to_array(A, L),
     jpl_call(SHERPA,'visualizeAreas',[L],_).
 
+
 visualize_bboxes(A):-
 get_objects_by_type(A, Objs),
     forall(member(X,Objs),callVisualizer(X)).
@@ -416,6 +423,35 @@ marker_update(Obj),
 set_keywords_as_markerobjs(T).
 
 set_keywords_as_markerobjs([]).
+
+get_regions(Gestures, Elems):-
+sherpa_interface(SHERPA),
+format('test\n'),
+findall(Polygon, (owl_individual_of(Polygon, 'http://knowrob.org/kb/knowrob.owl#GISPolygon')),Objs),
+format('test1011\n'),
+map_objects_transformations(Objs, Trans),
+format('test123\n'),
+jpl_list_to_array(Objs,LObjs),
+format('test789\n'),
+jpl_list_to_array(Trans,LTrans),
+jpl_list_to_array(Gestures,LGestures),
+format('test456\n'),
+jpl_call(SHERPA,'getRegions',[LGestures, LObjs, LTrans], Elems).
+
+
+visualize_meshes(Elems):-
+forall(member(Elem, Elems), visualize_mesh(Elem)).
+
+visualize_mesh(Elem):-
+format('visualize_mesh'),
+sherpa_interface(SHERPA),
+map_object_dimensions(Elem,W,D,H),
+append([W, D, H],[], L),
+jpl_list_to_array(L,LDim),
+rdf_has(Elem, knowrob:pathToCadModel, literal(type(_X,Path))),
+current_object_pose(Elem,Pose),
+jpl_list_to_array(Pose, LPose),
+jpl_call(SHERPA, 'addObjectMarker',[Path, LPose],_).
 
 get_all_detected_regions(Link, T1, T2, Arr):-
 get_all_timepoints(Link, T1, T2, TL),
