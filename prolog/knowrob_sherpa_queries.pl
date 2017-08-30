@@ -427,7 +427,8 @@ set_keywords_as_markerobjs([]).
 get_regions(Gestures, Elems):-
 sherpa_interface(SHERPA),
 format('test\n'),
-findall(Polygon, (owl_individual_of(Polygon, 'http://knowrob.org/kb/knowrob.owl#GISPolygon')),Objs),
+%findall(Polygon, (owl_individual_of(Polygon, 'http://knowrob.org/kb/knowrob.owl#GISPolygon')),Objs),
+map_root_objects('http://knowrob.org/kb/u_map.owl#USemMap_twoY',Objs),
 format('test1011\n'),
 map_objects_transformations(Objs, Trans),
 format('test123\n'),
@@ -445,9 +446,9 @@ forall(member(Elem, Elems), visualize_mesh(Elem)).
 visualize_mesh(Elem):-
 format('visualize_mesh'),
 sherpa_interface(SHERPA),
-map_object_dimensions(Elem,W,D,H),
-append([W, D, H],[], L),
-jpl_list_to_array(L,LDim),
+%map_object_dimensions(Elem,W,D,H),
+%append([W, D, H],[], L),
+%jpl_list_to_array(L,LDim),
 rdf_has(Elem, knowrob:pathToCadModel, literal(type(_X,Path))),
 current_object_pose(Elem,Pose),
 jpl_list_to_array(Pose, LPose),

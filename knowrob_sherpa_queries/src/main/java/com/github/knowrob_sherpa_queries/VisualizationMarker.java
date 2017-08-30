@@ -677,7 +677,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 	//	System.out.println("getRegions123");
 	int value = gesturepose.length / 2;
 		System.out.println(gesturepose.length);
-	for(int i = 0; i < gesturepose.length; i++)
+	for(int i = value; i < gesturepose.length; i=i+5)
 	    {
 		//	System.out.println(gesturepose[i].length);
 		if(gesturepose[i].length > 7)
