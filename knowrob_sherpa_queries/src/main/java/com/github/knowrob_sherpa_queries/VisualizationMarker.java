@@ -188,7 +188,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 // jpl_call(SHERPA,'addArrow',[ARR],FIN).
     //public String addArrow(float[] pose) {
     public String addArrow(float[] pose, float[] dim){
-	System.out.println("addArrow");
+	//	System.out.println("addArrow");
 	final Marker m;
 	m = createMarker();
 	m.setType(Marker.ARROW);
@@ -390,7 +390,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     }
 
-    public void addEntityMarker(String name, float[] pose)
+    public void addRobotMarker(String name, float[] pose)
     {
 	String value="";
         int zvalue = 0;
@@ -669,17 +669,18 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     public String[] getRegions(float[][] gesturepose, String[] objects, float[][] objposes)
     {
-	//	System.out.println("getRegions");
+	// System.out.println("getRegions");
 	
 	float[] arr = new float[7];
 	List<String> list = new ArrayList<String>();
 	List<String> newlist = new ArrayList<String>();
 	//	System.out.println("getRegions123");
 	int value = gesturepose.length / 2;
-		System.out.println(gesturepose.length);
+	//	System.out.println(gesturepose.length);
 	for(int i = value; i < gesturepose.length; i=i+5)
 	    {
-		//	System.out.println(gesturepose[i].length);
+		//	System.out.println(" i ist: "+ i+ " und value ist :"+value);
+		//     	System.out.println(gesturepose[i].length);
 		if(gesturepose[i].length > 7)
 		    {
 			arr[0] = gesturepose[i][3];
@@ -741,7 +742,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 		min[1] = pose[1];
 		min[2] = pose[2] - i;
 		String value = checkValueInRegionsTransform(min, objs, objposes);
-
+		//System.out.println("Value is " +value);
 		if(value != "Empty")
 		    {
 			// System.out.println(value);
@@ -801,7 +802,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 		String value = checkValueInTransform(min, objs, objposes);
 		if(value != "Empty")
 		    {
-			System.out.println(value);
+			//	System.out.println(value);
 			float r = 0.0f;
 			float g = 1.0f;
 			float b = 0.0f;
@@ -836,7 +837,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 			    markersCache.put(identifier.toString(),m);
 			}
 			publishMarkers();
-			System.out.println(value);
+			//	System.out.println(value);
 			return value;
 		    }
 
@@ -1119,10 +1120,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 		    {	
 			//	System.out.println("get-distance: " +getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]));
 		     
-			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <=550.0)
+			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <=50.0)
 			    {
 				// 	addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
-				///	System.out.println(objs[i]);
+				//	System.out.println(objs[i]);
+				//	System.out.println("i is in objs and named with "+ i);
 				return objs[i];
 			    }
 
@@ -1252,7 +1254,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <= 25.0)
 			    {
 			       	addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
-				///	System.out.println(objs[i]);
+				//		System.out.println(arr[j]);
 				return objs[i];
 			    }
 
@@ -1433,7 +1435,7 @@ public class VisualizationMarker extends AbstractNodeMain{
     
     public float[] getTaskPose (String str, String btr)
     {
-	System.out.println("getTaskPose");
+	//	System.out.println("getTaskPose");
 	float[] dezi = new float[7];
 	String spaces[] = str.split(" ");
 	String spaces2[] = btr.split(" ");
@@ -1444,7 +1446,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 	dezi[4] = Float.parseFloat(spaces2[2]);
 	dezi[5] = Float.parseFloat(spaces2[3]);
 	dezi[6] = Float.parseFloat(spaces2[0]);
-	System.out.println(str);
+	// System.out.println(str);
 	return dezi;
     }
 
@@ -1960,18 +1962,18 @@ public class VisualizationMarker extends AbstractNodeMain{
     {	
 	for(int i=0; i < timepoints.length; i++)
 	    {
-		System.out.println(timepoints[i]);
+		//	System.out.println(timepoints[i]);
 
 		if(timepoints[i].contains(":") && !timepoints[i].contains("#")){
 		    String[] knowrob_split = timepoints[i].split(":");
 		    String[] timepoint_split = knowrob_split[1].split("_");
 		    double x = Double.parseDouble(timepoint);
 		    double w = Double.parseDouble(timepoint);
-		    System.out.println(w);
-		    System.out.println(timepoint_split[1]);
+		    //   System.out.println(w);
+		    // System.out.println(timepoint_split[1]);
 		    double y = Double.parseDouble(timepoint_split[1]);
-		    System.out.println(x);
-		    System.out.println(y);
+		    // System.out.println(x);
+		    // System.out.println(y);
 		    if(x < y)
 			{
 			    String z = timepoints[i];
@@ -1984,11 +1986,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 			String[] timepoint_split = knowrob_split[1].split("_");
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoint_split[1]);
+			//		System.out.println(w);
+			//System.out.println(timepoint_split[1]);
 			double y = Double.parseDouble(timepoint_split[1]);
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//System.out.println(y);
 			if(x < y)
 			    {
 				String z = timepoints[i];
@@ -1999,11 +2001,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 			String[] timepoint_split = timepoints[i].split("_");
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoint_split[1]);
+			//	System.out.println(w);
+			//	System.out.println(timepoint_split[1]);
 			double y = Double.parseDouble(timepoint_split[1]);
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//	System.out.println(y);
 			if(x < y)
 			    {
 				String z = timepoints[i];
@@ -2013,11 +2015,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 		    {
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoints[i]     );
+			//	System.out.println(w);
+			//	System.out.println(timepoints[i]     );
 			double y = Double.parseDouble(timepoints[i] );
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//	System.out.println(y);
 			if(x < y)
 			    {
 				String z = timepoints[i];
@@ -2056,11 +2058,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 		    String[] timepoint_split = knowrob_split[1].split("_");
 		    double x = Double.parseDouble(timepoint);
 		    double w = Double.parseDouble(timepoint);
-		    System.out.println(w);
-		    System.out.println(timepoint_split[1]);
+		    // System.out.println(w);
+		    //System.out.println(timepoint_split[1]);
 		    double y = Double.parseDouble(timepoint_split[1]);
-		    System.out.println(x);
-		    System.out.println(y);
+		    //System.out.println(x);
+		    //System.out.println(y);
 		    if(x < y && i > 0)
 			{
 			    String z = timepoints[i-1];
@@ -2073,11 +2075,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 			String[] timepoint_split = knowrob_split[1].split("_");
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoint_split[1]);
+			//	System.out.println(w);
+			//	System.out.println(timepoint_split[1]);
 			double y = Double.parseDouble(timepoint_split[1]);
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//	System.out.println(y);
 			if(x < y && i > 0)
 			    {
 				String z = timepoints[i-1];
@@ -2088,11 +2090,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 			String[] timepoint_split = timepoints[i].split("_");
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoint_split[1]);
+			//	System.out.println(w);
+			//	System.out.println(timepoint_split[1]);
 			double y = Double.parseDouble(timepoint_split[1]);
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//	System.out.println(y);
 			if(x < y)
 			    {
 				String z = timepoints[i];
@@ -2102,11 +2104,11 @@ public class VisualizationMarker extends AbstractNodeMain{
 		    {
 			double x = Double.parseDouble(timepoint);
 			double w = Double.parseDouble(timepoint);
-			System.out.println(w);
-			System.out.println(timepoints[i]);
+			//	System.out.println(w);
+			//	System.out.println(timepoints[i]);
 			double y = Double.parseDouble(timepoints[i]);
-			System.out.println(x);
-			System.out.println(y);
+			//	System.out.println(x);
+			//	System.out.println(y);
 			if(x < y)
 			    {
 				String z = timepoints[i-1];
