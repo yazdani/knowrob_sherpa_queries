@@ -344,15 +344,28 @@ public class VisualizationMarker extends AbstractNodeMain{
 
     public void addObjectMarker(String url, float[] pose)
     {
+	System.out.println("addObjectMarker");
+	System.out.println(pose.length);
 	// String uri = "";
-	// if(url.contains("Lake"))
-	//     {
+	double a = 1.0;
+	double b = 1.0;
+	double c = 1.0;
+	System.out.println(url);
+	System.out.println(url.contains("Lake_rFdy"));
+	if(url.contains("Lake1_000.dae"))
+           {
+	       System.out.println("I AM INSIDE");
+	       // a = 0.5;
+	       // b = 0.5;
+	       // c = 1.0;
+	       url = "package://sim/unreal_meshes/Marker/Lake.dae";	       
+	   }
 	// 	uri = "package://sim/unreal_meshes/unreal_meshes"
 	// 	    }else
 	//     {
 	// 	uri = "package://sim/unreal_meshes/GIS/forest01.dae";
 	//     }
-
+	System.out.println(url);
     	final Marker m;
     	m = createMarker();
     	m.setType(Marker.MESH_RESOURCE);
@@ -360,17 +373,17 @@ public class VisualizationMarker extends AbstractNodeMain{
     	m.setMeshResource(url);
     	float x = pose[0];
     	float y = pose[1];
-    	float z = pose[2]+10;
+    	float z = pose[2]+3;
     	m.getPose().getPosition().setX(x);
     	m.getPose().getPosition().setY(y);
     	m.getPose().getPosition().setZ(z);
-    	m.getPose().getOrientation().setW(1);
-    	m.getPose().getOrientation().setX(0);
-    	m.getPose().getOrientation().setY(0);
-    	m.getPose().getOrientation().setZ(0);
-    	m.getScale().setX(0.5);
-    	m.getScale().setY(0.5);
-    	m.getScale().setZ(0.5);
+    	m.getPose().getOrientation().setW(pose[3]);
+    	m.getPose().getOrientation().setX(pose[4]);
+    	m.getPose().getOrientation().setY(pose[5]);
+    	m.getPose().getOrientation().setZ(pose[6]);
+	m.getScale().setX(a);
+	m.getScale().setY(b);
+	m.getScale().setZ(c);
     	m.getColor().setR(1);
     	m.getColor().setG(0);
     	m.getColor().setB(0);
@@ -720,10 +733,19 @@ public class VisualizationMarker extends AbstractNodeMain{
      	     if(array[j].contains("FrozenLake_test") && z == 0)
 		{
 		    z = 1;
-		    newlist.add("unreal:FrozenLake_rFdy");
+		    newlist.add("http://knowrob.org/kb/unreal_log.owl#FrozenLake_rFdy");
 		}else if(!array[j].contains("FrozenLake_test"))
 		 {
-		      newlist.add(array[j]);
+		     if(array[j].contains("unreal:"))
+			 {
+			     String spaces[] = array[j].split("unreal:");
+			     System.out.println(spaces[1]);
+			     newlist.add("http://knowrob.org/kb/unreal_log.owl#"+spaces[1]);
+			 }else
+			 {
+			     newlist.add(array[j]);
+			 }
+		     
 		 }
      	 }
      String[] newarray = new String[newlist.size()];
@@ -800,8 +822,8 @@ public class VisualizationMarker extends AbstractNodeMain{
 		min[1] = pose[1];
 		min[2] = pose[2] - i;
 		String value = checkValueInTransform(min, objs, objposes);
-		if(value != "Empty")
-		    {
+			if(value != "Empty") // 
+			    {
 			//	System.out.println(value);
 			float r = 0.0f;
 			float g = 1.0f;
@@ -819,13 +841,13 @@ public class VisualizationMarker extends AbstractNodeMain{
 			m.getPose().getOrientation().setX(0);
 			m.getPose().getOrientation().setY(0);
 			m.getPose().getOrientation().setZ(0);	
-			m.getScale().setX(8);
-			m.getScale().setY(8);
-			m.getScale().setZ(5.0);
-			m.getColor().setR(0);
-			m.getColor().setG(1);
-			m.getColor().setB(0);
-			m.getColor().setA(0.7f);
+			m.getScale().setX(8.0); //8
+			m.getScale().setY(8.0); //8
+			m.getScale().setZ(5.0);  //5.0
+			m.getColor().setR(0);  //0
+			m.getColor().setG(1);  //1
+			m.getColor().setB(0); //0
+			m.getColor().setA(0.7f); //0.7
 			//add marker to map
 			final StringBuilder identifier = new StringBuilder();
 			identifier.append(m.getNs()).append('_').append(m.getId());
@@ -838,8 +860,8 @@ public class VisualizationMarker extends AbstractNodeMain{
 			}
 			publishMarkers();
 			//	System.out.println(value);
-			return value;
-		    }
+			//	//		return value;
+		   }
 
 
 	    }	    
@@ -1253,7 +1275,7 @@ public class VisualizationMarker extends AbstractNodeMain{
 		     
 			if(getDistance(arr[j][0], arr[j][1], arr[j][2], objposes[i][0], objposes[i][1], objposes[i][2]) <= 25.0)
 			    {
-			       	addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
+		          	addRayTracingMarker(arr[j], 0.0f, 1.0f,0.0f);
 				//		System.out.println(arr[j]);
 				return objs[i];
 			    }

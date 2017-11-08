@@ -46,7 +46,7 @@ Copyright (C) 2017 Fereshta Yazdani
        all_objects_dimensions/2,
        all_objects_transformations/2,
        all_timepoint_poses/3,
-       add_entity/2,
+       add_robot/2,
        callAll/1,
        callSlope/1,
        callVisualizer/1,
@@ -73,6 +73,7 @@ Copyright (C) 2017 Fereshta Yazdani
        get_elements/3,
        get_previous_timepoint/3,
        get_regions/2,
+       get_mesh_scale_array/2,
        visualize_meshes/1,
        goIntoOthermethod/4,
        is_part_of/3,
@@ -88,7 +89,8 @@ Copyright (C) 2017 Fereshta Yazdani
        visualize_bboxes/1,
        visualize_bbox/1,
        visualize_mesh/1,
-       view_image/1
+       view_image/1,
+       show_gps_location/3
   ]).
 
 :- use_module(library('semweb/rdf_db')).
@@ -108,7 +110,7 @@ Copyright (C) 2017 Fereshta Yazdani
     add_marker(r,r),
     add_name(r,r),
     add_tenName(r,r),
-    add_entity(r,r),
+    add_robot(r,r),
     add_stext(r,r),
     get_pose_of_transform(r, r),
     add_speech(r,r),
@@ -128,6 +130,7 @@ Copyright (C) 2017 Fereshta Yazdani
     get_all_detected_regions(r,r,r,r),
     get_all_poses(r,r),
     get_regions(r,r),
+    get_mesh_scale_array(r,r),
     visualize_meshes(r),
     get_previous_timepoint(r,r,r),
     get_all_timepoint_poses(r,r,r),
@@ -156,7 +159,8 @@ Copyright (C) 2017 Fereshta Yazdani
     visualize_bboxes(r),
     view_image(r),
     visualize_mesh(r),
-    visualize_bbox(r).
+    visualize_bbox(r),
+    show_gps_location(r,r,r).
 
 :- rdf_db:rdf_register_ns(knowrob, 'http://knowrob.org/kb/knowrob.owl#', [keep(true)]).
 :- rdf_db:rdf_register_ns(u-map, 'http://knowrob.org/kb/u_map.owl#', [keep(true)]).
@@ -232,8 +236,13 @@ all_objects_transformations(Obj,Poses):-
     Poses = Sose.
 
 map_objects_transformations([H|T],[SH|ST]):-
+%format('map_objects_transformations'),
+%format('\n FIREST \n'),
+%format(H),
 all_objects_transformations(H,P),
 SH = P,
+%format('\n  SECOND \n'),
+%format(H),
 map_objects_transformations(T, ST).
 
 map_objects_transformations([],[]).
@@ -426,17 +435,17 @@ set_keywords_as_markerobjs([]).
 
 get_regions(Gestures, Elems):-
 sherpa_interface(SHERPA),
-format('test\n'),
+%format('test\n'),
 %findall(Polygon, (owl_individual_of(Polygon, 'http://knowrob.org/kb/knowrob.owl#GISPolygon')),Objs),
 map_root_objects('http://knowrob.org/kb/u_map.owl#USemMap_twoY',Objs),
-format('test1011\n'),
+%format('test1011\n'),
 map_objects_transformations(Objs, Trans),
-format('test123\n'),
+%format('test123\n'),
 jpl_list_to_array(Objs,LObjs),
-format('test789\n'),
+%format('test789\n'),
 jpl_list_to_array(Trans,LTrans),
 jpl_list_to_array(Gestures,LGestures),
-format('test456\n'),
+%format('test456\n'),
 jpl_call(SHERPA,'getRegions',[LGestures, LObjs, LTrans], Elems).
 
 
@@ -444,13 +453,17 @@ visualize_meshes(Elems):-
 forall(member(Elem, Elems), visualize_mesh(Elem)).
 
 visualize_mesh(Elem):-
-format('visualize_mesh'),
+format('visualize_mesh\n'),
+format(Elem),
 sherpa_interface(SHERPA),
 %map_object_dimensions(Elem,W,D,H),
 %append([W, D, H],[], L),
 %jpl_list_to_array(L,LDim),
+format('\nElem\n'),
 rdf_has(Elem, knowrob:pathToCadModel, literal(type(_X,Path))),
+format('Path\n'),
 current_object_pose(Elem,Pose),
+format('Pose\n'),
 jpl_list_to_array(Pose, LPose),
 jpl_call(SHERPA, 'addObjectMarker',[Path, LPose],_).
 
@@ -539,16 +552,24 @@ get_atomlist_from_stringlist(T,AT).
 
 get_atomlist_from_stringlist([],[]).
 
-add_entity(Name,Pose):-
+add_robot(Name,Pose):-
 sherpa_interface(SHERPA),
 jpl_list_to_array(Pose,P),
 jpl_call(SHERPA,'addRobotMarker',[Name,P],_).
 
 
+show_gps_location(E, Obj, Transform):-
+mng_lookup_transform('/map', Obj, E, Transform), !,
+possible_object_location('posOf_Kite_Accident', Transform).
+
 get_pose_of_transform(Trans, Pose):-
 sherpa_interface(SHERPA),
 jpl_list_to_array(Trans,T),
 jpl_call(SHERPA,'transformToPose',[T],Pose).
+
+get_mesh_scale_array(Elem,Array):-
+rdf_has(Elem, 'srdl2-comp:mesh_scale', literal(type(_X, String))),
+split_string(String, " ", "", Array).
 
 % 13 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_150IF
 % 14 = http://knowrob.org/kb/unreal_log.owl#FrozenLake_rFdy
